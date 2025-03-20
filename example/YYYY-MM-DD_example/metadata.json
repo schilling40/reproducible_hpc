@@ -1,0 +1,21 @@
+{
+	"date": "YYYY-MM-DD",
+	"task": "example",
+	"job-name": "train-nn-gpu",
+	"runtime": "05:00:00",
+	"mail-user": "yourmail@gwdg.de",
+	"partition": "grete:shared",
+	"gpu": "A100:2",
+	"jobid": "1234567",
+	"Reportseff": [],
+	"Repositories": [
+		{
+			"repo_name": "flamingo-tools",
+			"repo_version": "230b80699e90787b9562e27a8662a2842d61b2ee"
+		},
+		{
+			"repo_name": "micro-sam",
+			"repo_version": "84c497e2df51a34e296e2abd5b81d921cf4dfa57"
+		}
+	]
+}

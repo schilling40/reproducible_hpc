@@ -1,0 +1,2 @@
+flamingo-tools	/user/schilling40/u15000/flamingo-tools
+micro-sam	/user/schilling40/u15000/micro-sam
