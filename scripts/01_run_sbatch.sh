@@ -66,13 +66,14 @@ read -ra SUFFIX_ARR <<< "${CONTENT[@]:2}"
 SUFFIX_STR=$(IFS='_' ; echo "${SUFFIX_ARR[*]}")
 
 LOG_FILE="$DATE"_log_"$SUFFIX_STR".txt
-LOG_FILE="$SCRIPT_DIR"/"$LOG_FILE"
+LOG_FILE="$INPUT_DIR"/"$LOG_FILE"
 
 # --- Submit job ---
 JOB_STRING=$(sbatch "$INPUT")
+echo "$JOB_STRING"
 
 # --- Extract JobID from output ---
-JOB_ID=${JOB_STRING:(-9):(-2)}
+JOB_ID=${JOB_STRING:(-7)}
 
 if ! [ -f "$LOG_FILE" ] ; then
 	printf '%s\n' "$JOB_ID" > "$LOG_FILE"
@@ -83,5 +84,5 @@ fi
 
 if [ "$ARCHIVE_DIR" ] ; then
 	bash "$SCRIPT_DIR"/02_archive_scripts.sh -a "$ARCHIVE_DIR" -i "$INPUT_DIR" "$DATE" "$SUFFIX_STR"
-	python "$SCRIPT_DIR"/11_write_metadata.py "${REPO_OPTION[@]}" "$ARCHIVE_DIR"
+	python "$SCRIPT_DIR"/11_write_metadata.py "${REPO_OPTION[@]}" "$ARCHIVE_DIR"/"$DATE"_"$SUFFIX_STR"/
 fi
