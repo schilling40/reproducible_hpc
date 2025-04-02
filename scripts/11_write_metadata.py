@@ -104,7 +104,13 @@ def main(input_dir, output_file, jobid, repository_file):
 							repo_path = content[1]
 						if os.path.isdir(repo_path):
 							repo_version = subprocess.run(["git", "rev-parse", "HEAD"], cwd=repo_path, stdout=subprocess.PIPE).stdout.decode('utf-8')
-							repo_list.append({"repo_name":repo_name, "repo_version":repo_version.strip()})
+							git_status_out = subprocess.run(["git", "status", "--porcelain"], cwd=repo_path, stdout=subprocess.PIPE).stdout.decode('utf-8')
+							if 0 == len(git_status_out):
+								git_status = "clean"
+							else:
+								git_status = "dirty"
+
+							repo_list.append({"repo_name":repo_name, "repo_version":repo_version.strip(), "status":git_status})
 						else:
 							print("Repository path " + repo_path + " could not be resolved.")
 			myfile.close()
