@@ -84,7 +84,7 @@ fi
 
 ODIR=$ARCHIVE_DIR/"$DATE"_"$SUFFIX"
 
-echo "Script is transferred to directory" "$ODIR"
+echo "Files are transferred to directory" "$ODIR"
 
 if [ ! -d "$ODIR" ] ; then
 	mkdir -p "$ODIR"
@@ -92,24 +92,22 @@ fi
 
 echo "Transfer mode" $TRANSFER_MODE
 
-SBATCH_FILE="$INPUT_DIR"/"$DATE"_sbatch_"$SUFFIX".sbatch
-LOG_FILE="$INPUT_DIR"/"$DATE"_log_"$SUFFIX".txt
-RUN_FILE="$INPUT_DIR"/"$DATE"_"$SUFFIX".sh
+JOB_FILES=("$INPUT_DIR"/"$DATE"*"$SUFFIX"*)
 
-if [ "$TRANSFER_MODE" = "COPY" ] ; then
+echo "Transferring files" "${JOB_FILES[@]}"
 
-	cp "$SBATCH_FILE" "$ODIR"/sbatch.sbatch
-	cp "$LOG_FILE" "$ODIR"/log.txt
-	if [ -f "$RUN_FILE" ] ; then
-		cp "$RUN_FILE" "$ODIR"/run.sh
+for file in "${JOB_FILES[@]}" ; do
+
+	# extraction of center part of file name
+	FILE_NAME=$(basename "$file")
+	FILE_EXTENSION="${FILE_NAME##*.}"
+	temp="${FILE_NAME#"$DATE"_}"
+	middle="${temp%_"$SUFFIX"*}"
+
+	if [ "$TRANSFER_MODE" = "COPY" ] ; then
+		cp "$file" "$ODIR"/"$middle"."$FILE_EXTENSION"
+	elif [ "$TRANSFER_MODE" = "MOVE" ] ; then
+		mv "$file" "$ODIR"/"$middle"."$FILE_EXTENSION"
 	fi
+done
 
-elif [ "$TRANSFER_MODE" = "MOVE" ] ; then
-
-	mv "$SBATCH_FILE" "$ODIR"/sbatch.sbatch
-	mv "$LOG_FILE" "$ODIR"/log.txt
-	if [ -f "$RUN_FILE" ] ; then
-		mv "$RUN_FILE" "$ODIR"/run.sh
-	fi
-
-fi
