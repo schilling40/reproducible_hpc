@@ -84,5 +84,5 @@ fi
 
 if [ "$ARCHIVE_DIR" ] ; then
 	bash "$SCRIPT_DIR"/02_archive_scripts.sh -a "$ARCHIVE_DIR" -i "$INPUT_DIR" "$DATE" "$SUFFIX_STR"
-	python "$SCRIPT_DIR"/11_write_metadata.py "${REPO_OPTION[@]}" "$ARCHIVE_DIR"/"$DATE"_"$SUFFIX_STR"/
+	python "$SCRIPT_DIR"/write_metadata.py "${REPO_OPTION[@]}" "$ARCHIVE_DIR"/"$DATE"_"$SUFFIX_STR"/
 fi
