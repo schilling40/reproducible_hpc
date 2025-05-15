@@ -13,6 +13,7 @@ from typing import Optional
 
 from write_metadata import reportseff_from_jobid
 
+
 def main(
         input_dir: str,
         pattern: Optional[str] = None,
@@ -23,10 +24,10 @@ def main(
         input_dir: Input directory containing archived scripts.
         pattern: Pattern to match folders in job archive.
     """
-    subfolders = [ f.path for f in os.scandir(input_dir) if f.is_dir() ]
+    subfolders = [f.path for f in os.scandir(input_dir) if f.is_dir()]
 
     if pattern is not None:
-        subfolders = [ s for s in subfolders if pattern in os.path.basename(s) ]
+        subfolders = [s for s in subfolders if pattern in os.path.basename(s)]
         if len(subfolders) == 0:
             raise ValueError(f"No subfolders match pattern {pattern}.")
 
@@ -39,7 +40,7 @@ def main(
             with open(metadata, 'r') as myfile:
                 data = myfile.read()
             metadict = json.loads(data)
-            reports = metadict["Reportseff"] if type(metadict["Reportseff"]) == list else [metadict["Reportseff"]]
+            reports = metadict["Reportseff"] if isinstance(metadict["Reportseff"], list) else [metadict["Reportseff"]]
             for report in reports:
                 if report["State"] in overwrite_states:
                     update_dir.append(folder)
