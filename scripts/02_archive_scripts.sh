@@ -90,7 +90,7 @@ fi
 
 echo "Transfer mode" $TRANSFER_MODE
 
-JOB_FILES=("$INPUT_DIR"/"$DATE"*"$SUFFIX"*)
+JOB_FILES=("$INPUT_DIR"/"$DATE"_*_"$SUFFIX".*)
 
 echo "Transferring files" "${JOB_FILES[@]}"
 
