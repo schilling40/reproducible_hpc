@@ -82,7 +82,6 @@ def reportseff_from_jobid(log_file: str, metadict: dict, jobid: int = None) -> N
         metadict: Dictionary containing metadata for slurm job
     """
     if jobid is None:
-        print("Reading job id from log file")
         if os.path.isfile(log_file):
             with open(log_file, 'rt', encoding="utf8", errors='ignore') as myfile:
                 for line in myfile:
@@ -92,6 +91,8 @@ def reportseff_from_jobid(log_file: str, metadict: dict, jobid: int = None) -> N
             myfile.close()
         else:
             sys.exit("Provide either a JobID or a log file containing a JobID")
+    else:
+        print(f"Using manually provided JobID {jobid}")
 
     metadict["jobid"] = jobid
     user_id = subprocess.run(['whoami'], stdout=subprocess.PIPE).stdout.decode('utf-8').strip()
@@ -188,6 +189,7 @@ def main(
         with open(output_file, 'r') as myfile:
             data = myfile.read()
         metadict = json.loads(data)
+        sbatch_parameters_to_dict(sbatch_file, metadict=metadict)
         reportseff_from_jobid(log_file,  metadict=metadict, jobid=jobid)
 
     else:
@@ -214,7 +216,7 @@ if __name__ == "__main__":
     parser.add_argument('-r', "--repository_file",
                         type=str, default=None,
                         help="File with information about git repositories in format '<Name>\t<path-to-repository>\n'")
-    parser.add_argument("--overwrite", action="store_true", help="Overwrite existing JSOn file.")
+    parser.add_argument("--overwrite", action="store_true", help="Overwrite existing JSON file.")
     args = parser.parse_args()
 
     main(args.input_dir, args.output, args.jobid, args.repository_file, args.overwrite)
