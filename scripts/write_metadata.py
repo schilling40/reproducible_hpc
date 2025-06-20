@@ -48,24 +48,44 @@ def sbatch_parameters_to_dict(sbatch_file: str, metadict: dict) -> None:
         metadict: Dictionary containing metadata for slurm job
     """
     pattern = {"#SBATCH"}
-    parameter_dict = [{"param": "--job-name",   "descr": "job-name"},
-                      {"param": "--mail-user",  "descr": "mail-user"},
-                      {"param": "-t",           "descr": "runtime"},
-                      {"param": "-p",           "descr": "partition"},
-                      {"param": "-G",           "descr": "gpu"},
-                      {"param": "-c",           "descr": "cpus-per-task"},
-                      {"param": "--mem",        "descr": "Memory-per-node"},
-                      {"param": "-a",           "descr": "Job array"},
-                      ]
+    parameter_dict = [
+        {"param": ["-A", "--account"],
+         "descr": "account"},
+
+        {"param": ["-a", "--array"],
+         "descr": "Job array"},
+
+        {"param": ["-c", "--cpus-per-task"],
+         "descr": "cpus-per-task"},
+
+        {"param": ["-G", "--gpus"],
+         "descr": "gpu"},
+
+        {"param": ["--job-name"],
+         "descr": "job-name"},
+
+        {"param": ["--mail-user"],
+         "descr": "mail-user"},
+
+        {"param": "--mem",
+         "descr": "Memory-per-node"},
+
+        {"param": ["-t", "--time"],
+         "descr": "runtime"},
+
+        {"param": ["-p", "--partition"],
+         "descr": "partition"},
+    ]
 
     with open(sbatch_file, 'rt', encoding="utf8", errors='ignore') as myfile:
         for line in myfile:
             if all(s in line for s in pattern):
                 contents = line.split(" ")
                 for p in parameter_dict:
-                    if p["param"] == contents[1]:
+                    param_list = p["param"] if isinstance(p["param"], list) else [p["param"]]
+                    if contents[1] in param_list:
                         metadict[p["descr"]] = contents[2].strip()
-                    elif p["param"] == contents[1].split("=")[0]:
+                    elif contents[1].split("=")[0] in param_list:
                         metadict[p["descr"]] = contents[1].split("=")[1].strip()
     myfile.close()
 
