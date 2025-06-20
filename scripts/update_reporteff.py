@@ -8,7 +8,7 @@ A file containing git repositories can be used as an argument to archive the cur
 import argparse
 import json
 import os
-
+from datetime import date
 from typing import List, Optional
 
 from write_metadata import reportseff_from_jobid
@@ -78,6 +78,13 @@ def update_reporteff(subfolders: List[str]):
                     update_dir.append(folder)
                     break
 
+            # check for dates in the last 8 days
+            date_str = [int(i) for i in metadict["date"].split("-")]
+            job_date = date(date_str[0], date_str[1], date_str[2])
+            days_past = date.today() - job_date
+            if len(reports) == 0 and days_past.days <= 8:
+                update_dir.append(folder)
+
     for folder in update_dir:
         print(f"Updating efficiency report of folder {folder}.")
         log_file = os.path.join(folder, "log.txt")
@@ -132,7 +139,7 @@ def check_metadata(subfolders: List[str]):
                     with open(log_file, 'rt', encoding="utf8", errors='ignore') as myfile:
                         for line in myfile:
                             content = line.strip()
-                            if 0 != len(content):
+                            if len(content) != 0:
                                 jobid = line.strip().split()[0]
                                 jobids.append(jobid)
                 if jobid_ref in jobids:
