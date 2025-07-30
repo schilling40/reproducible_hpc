@@ -73,7 +73,8 @@ JOB_STRING=$(sbatch "$INPUT")
 echo "$JOB_STRING"
 
 # --- Extract JobID from output ---
-JOB_ID=${JOB_STRING:(-7)}
+IFS=' ' read -r -a JOB_ARR <<< "$JOB_STRING"
+JOB_ID=${JOB_ARR[-1]}
 
 if ! [ -f "$LOG_FILE" ] ; then
 	printf '%s\n' "$JOB_ID" > "$LOG_FILE"
