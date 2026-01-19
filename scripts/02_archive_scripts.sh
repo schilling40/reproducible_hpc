@@ -34,10 +34,10 @@ EOF
 usage="Usage: $0 [-h] [-m move] [-i input dir] [-a archive_dir] <date> <suffix>"
 
 while getopts "mi:a:h" opt; do
-        case $opt in
-        m)
-                TRANSFER_MODE="MOVE"
-        ;;
+	case $opt in
+	m)
+		TRANSFER_MODE="MOVE"
+	;;
 	i)
 		INPUT_DIR=$(readlink -f "$OPTARG")
 	;;
@@ -50,11 +50,11 @@ while getopts "mi:a:h" opt; do
 		echo "$helpstr"
 		exit 0
 	;;
-        \?)
-        	echo "$usage" >&2
+	\?)
+		echo "$usage" >&2
 		exit 1
-        ;;
-        esac
+	;;
+	esac
 done
 
 shift $((OPTIND - 1))
@@ -62,8 +62,8 @@ shift $((OPTIND - 1))
 
 if [ $# -lt 2 ] ; then
 
-        echo "$usage" >&2
-        exit 1
+	echo "$usage" >&2
+	exit 1
 fi
 
 DATE="$1"
@@ -108,4 +108,3 @@ for file in "${JOB_FILES[@]}" ; do
 		mv "$file" "$ODIR"/"$middle"."$FILE_EXTENSION"
 	fi
 done
-

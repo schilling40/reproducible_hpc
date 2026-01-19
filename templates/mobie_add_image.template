@@ -1,0 +1,48 @@
+#!/bin/bash
+#SBATCH --job-name=mobie_<cochlea_job_name>
+#SBATCH -t 01:10:00             # estimated time, adapt to your needs
+#SBATCH --mail-user=martin.schilling@med.uni-goettingen.de # change this to your mailaddress
+#SBATCH --mail-type=FAIL        # send mail when job begins and ends
+
+#SBATCH -p standard96s:shared         # the partition
+#SBATCH -A nim00007
+#SBATCH -c 36
+#SBATCH --mem 400G
+
+source ~/.bashrc
+micromamba activate mobie_02
+
+# Run the script
+
+SCRIPT_REPO=/user/schilling40/u15000/mobie-utils-python
+SCRIPT_DIR=$SCRIPT_REPO/mobie
+
+MOBIE_PROJECT=/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/mobie_project/cochlea-lightsheet
+
+COCHLEA=<cochlea>
+INPUT=/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/<cochlea>/<cochlea_data>
+
+RESOLUTION="[0.38,0.38,0.38]"
+SCALE_FACTORS="[[2,2,2],[2,2,2],[2,2,2],[2,2,2],[2,2,2],[2,2,2]]"
+CHUNKS="[64,64,64]"
+
+CHANNEL_STR=<channel_multi>
+INPUT_KEY_STR=<input_key_multi>
+
+IFS='_' read -r -a CHANNEL_ARR <<< "$CHANNEL_STR"
+IFS='_' read -r -a INPUT_KEY_ARR <<< "$INPUT_KEY_STR"
+
+arraylength=${#CHANNEL_ARR[@]}
+
+# use for loop to read all values and indexes
+for (( i=0; i<${arraylength}; i++ )); do
+
+	CHANNEL_NAME=${CHANNEL_ARR[$i]}
+	INPUT_KEY=${INPUT_KEY_ARR[$i]}
+	echo "Adding image data ""$INPUT_KEY"" to MoBIE project""$MOBIE_PROJECT"" as ""$CHANNEL_NAME"
+
+	mobie.add_image --input_path "$INPUT" --input_key "$INPUT_KEY" --root "$MOBIE_PROJECT" \
+		--dataset_name "$COCHLEA" --name "$CHANNEL_NAME" --resolution "$RESOLUTION" \
+		--scale_factors "$SCALE_FACTORS" --chunks "$CHUNKS"
+
+done

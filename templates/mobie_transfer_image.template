@@ -1,0 +1,24 @@
+#!/bin/bash
+#SBATCH --job-name=mobie_transfer_<cochlea_job_name>
+#SBATCH -t 08:00:00             # estimated time, adapt to your needs
+#SBATCH --mail-user=martin.schilling@med.uni-goettingen.de # change this to your mailaddress
+#SBATCH --mail-type=FAIL        # send mail when job begins and ends
+
+#SBATCH -p standard96s:shared         # the partition
+#SBATCH -A nim00007
+#SBATCH -c 36
+#SBATCH --mem 400G
+
+source ~/.bashrc
+
+# Run the script
+
+SCRIPT_REPO=/user/schilling40/u15000/mobie-utils-python
+SCRIPT_DIR=$SCRIPT_REPO/mobie
+
+MOBIE_PROJECT=/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/mobie_project/cochlea-lightsheet
+
+echo "Transfer of <cochlea> from ""$MOBIE_PROJECT"" to S3"
+
+module load rclone
+rclone --progress copyto "$MOBIE_PROJECT"/<cochlea> cochlea-lightsheet:cochlea-lightsheet/<cochlea>

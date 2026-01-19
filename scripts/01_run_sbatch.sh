@@ -18,11 +18,15 @@ EOF
 )
 
 REPO_OPTION=()
+MOVE_OPTION=()
 
-usage="Usage: $0 [-h] [-a archive_dir] [-r repository_file] <sbatch_file>"
+usage="Usage: $0 [-h] [-m move] [-a archive_dir] [-r repository_file] <sbatch_file>"
 
-while getopts "a:r:h" opt; do
-        case $opt in
+while getopts "ma:r:h" opt; do
+	case $opt in
+	m)
+		MOVE_OPTION+=(-m)
+	;;
 	a)
 		ARCHIVE_DIR=$(readlink -f "$OPTARG")
 	;;
@@ -36,19 +40,19 @@ while getopts "a:r:h" opt; do
 		echo "$helpstr"
 		exit 0
 	;;
-        \?)
-        	echo "$usage" >&2
+	\?)
+		echo "$usage" >&2
 		exit 1
-        ;;
-        esac
+	;;
+	esac
 done
 
 shift $((OPTIND - 1))
 
 if [ $# -lt 1 ] ; then
 
-        echo "$usage" >&2
-        exit 1
+	echo "$usage" >&2
+	exit 1
 fi
 
 INPUT=$(readlink -f "$1")
@@ -83,7 +87,10 @@ else
 	sed -i '$a'"$JOB_ID"'' "$LOG_FILE"
 fi
 
+echo "bash script" "$ARCHIVE_DIR"
+
 if [ "$ARCHIVE_DIR" ] ; then
-	bash "$SCRIPT_DIR"/02_archive_scripts.sh -a "$ARCHIVE_DIR" -i "$INPUT_DIR" "$DATE" "$SUFFIX_STR"
+	echo "writing metadata"
+	bash "$SCRIPT_DIR"/02_archive_scripts.sh "${MOVE_OPTION[@]}" -a "$ARCHIVE_DIR" -i "$INPUT_DIR" "$DATE" "$SUFFIX_STR"
 	python "$SCRIPT_DIR"/write_metadata.py "${REPO_OPTION[@]}" "$ARCHIVE_DIR"/"$DATE"_"$SUFFIX_STR"/
 fi

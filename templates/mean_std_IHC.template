@@ -1,0 +1,42 @@
+#!/bin/bash
+#SBATCH --job-name=mean-std-IHC_<cochlea_job_name>
+#SBATCH -t 00:40:00             # estimated time, adapt to your needs
+#SBATCH --mail-user=martin.schilling@med.uni-goettingen.de # change this to your mailaddress
+#SBATCH --mail-type=FAIL        # send mail when job begins and ends
+
+#SBATCH -p standard96s:shared         # the partition
+#SBATCH -A nim00007
+#SBATCH -c 2
+#SBATCH --mem 64G
+
+source ~/.bashrc
+micromamba activate flamingo13
+
+# Run the script
+
+SCRIPT_REPO=/user/schilling40/u15000/flamingo-tools
+cd "$SCRIPT_REPO"/flamingo_tools/segmentation/ || exit
+
+export SCRIPT_DIR=$SCRIPT_REPO/scripts
+
+export INPUT=/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/<cochlea>/<cochlea_data>
+export OUTPUT_FOLDER=/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/predictions/<cochlea>/<ihc_version>
+export SEG_CLASS="ihc"
+export INPUT_KEY=<input_key>
+
+echo "Input directory: ${INPUT}"
+echo "Output directory: ${OUTPUT_FOLDER}"
+
+if [ ! -d "$OUTPUT_FOLDER" ] ; then
+	mkdir -p "$OUTPUT_FOLDER"
+fi
+
+cmd_array=(	'import sys,os;'
+	'sys.path.insert(0,os.environ["SCRIPT_DIR"]);'
+	'import unet_prediction;'
+	'unet_prediction.run_unet_prediction_preprocess_slurm(input_path=os.environ["INPUT"],'
+	'output_folder=os.environ["OUTPUT_FOLDER"],seg_class=os.environ["SEG_CLASS"],'
+	'input_key=os.environ["INPUT_KEY"])')
+cmd="${cmd_array[*]}"
+python -c "$cmd"
+
