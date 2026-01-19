@@ -72,17 +72,21 @@ def update_reporteff(subfolders: List[str]):
             with open(metadata, 'r') as myfile:
                 data = myfile.read()
             metadict = json.loads(data)
+
+            # check for dates in the last 8 days
+            date_str = [int(i) for i in metadict["date"].split("-")]
+            job_date = date(date_str[0], date_str[1], date_str[2])
+            days_past = date.today() - job_date
+            if days_past.days > 8:
+                continue
+
             reports = metadict["Reportseff"] if isinstance(metadict["Reportseff"], list) else [metadict["Reportseff"]]
             for report in reports:
                 if report["State"] in overwrite_states:
                     update_dir.append(folder)
                     break
 
-            # check for dates in the last 8 days
-            date_str = [int(i) for i in metadict["date"].split("-")]
-            job_date = date(date_str[0], date_str[1], date_str[2])
-            days_past = date.today() - job_date
-            if len(reports) == 0 and days_past.days <= 8:
+            if len(reports) == 0:
                 update_dir.append(folder)
 
     for folder in update_dir:
