@@ -21,7 +21,7 @@ export SCRIPT_DIR=$SCRIPT_REPO/scripts
 
 export INPUT=/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/<cochlea>/<cochlea_data>
 export OUTPUT_FOLDER=/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/predictions/<cochlea>/<ihc_version>
-export SEG_CLASS="ihc"
+export SEG_CLASS=<ihc_version>
 export INPUT_KEY=<input_key>
 
 echo "Input directory: ${INPUT}"

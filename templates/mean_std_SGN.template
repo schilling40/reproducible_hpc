@@ -1,12 +1,12 @@
 #!/bin/bash
 #SBATCH --job-name=mean-std-SGN_<cochlea_job_name>
-#SBATCH -t 00:30:00             # estimated time, adapt to your needs
+#SBATCH -t 01:00:00             # estimated time, adapt to your needs
 #SBATCH --mail-user=martin.schilling@med.uni-goettingen.de # change this to your mailaddress
 #SBATCH --mail-type=FAIL        # send mail when job begins and ends
 
 #SBATCH -p standard96s:shared         # the partition
 #SBATCH -A nim00007
-#SBATCH -c 4
+#SBATCH -c 2
 #SBATCH --mem 64G
 
 source ~/.bashrc
@@ -21,7 +21,7 @@ export SCRIPT_DIR=$SCRIPT_REPO/scripts
 
 export INPUT=/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/<cochlea>/<cochlea_data>
 export OUTPUT_FOLDER=/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/predictions/<cochlea>/<sgn_version>
-export SEG_CLASS="ihc"
+export SEG_CLASS=<sgn_version>
 export INPUT_KEY=<input_key>
 
 echo "Input directory: ${INPUT}"

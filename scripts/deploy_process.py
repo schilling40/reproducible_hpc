@@ -118,7 +118,7 @@ def main(
     # values for MoBIE transfer
     replacement_dict["channel_multi"] = stains_str
 
-    script_str = "_".join(os.path.basename(input_file).split("_")[1:]).split(".template")[0]
+    script_str = os.path.basename(input_file).split(".template")[0]
     cochlea_short = f"{prefix}{number.lstrip('0')}{side}"
     output_file = f"{str(date.today())}_sbatch_{script_str}_{cochlea_short}.sbatch"
 
@@ -131,6 +131,8 @@ def main(
         run_str = f"bash {run_script} -m -a {archive_dir} -r {repository_file} {output_file}"
         print(run_str)
         subprocess.run(["bash", run_script, "-m", "-a", archive_dir, "-r", repository_file, output_file])
+    else:
+        print(replacement_dict)
 
 
 if __name__ == "__main__":

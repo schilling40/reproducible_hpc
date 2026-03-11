@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=synapse-detect_<cochlea_job_name>
+#SBATCH --job-name=synapse-marker_<cochlea_job_name>
 #SBATCH -t 01:10:00             # estimated time, adapt to your needs
 #SBATCH --mail-user=martin.schilling@med.uni-goettingen.de # change this to your mailaddress
 #SBATCH --mail-type=FAIL        # send mail when job begins and ends
