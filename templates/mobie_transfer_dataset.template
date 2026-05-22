@@ -6,7 +6,7 @@
 
 #SBATCH -p standard96s:shared         # the partition
 #SBATCH -A nim00007
-#SBATCH -c 2 
+#SBATCH -c 1 
 #SBATCH --mem 4G
 #SBATCH --constraint=inet
 

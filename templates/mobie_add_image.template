@@ -10,7 +10,7 @@
 #SBATCH --mem 400G
 
 source ~/.bashrc
-micromamba activate mobie_02
+micromamba activate mobie
 
 # Run the script
 

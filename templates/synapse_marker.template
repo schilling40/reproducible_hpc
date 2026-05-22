@@ -12,7 +12,7 @@
 #SBATCH --constraint=inet
 
 source ~/.bashrc
-micromamba activate micro-sam_gpu
+micromamba activate sam
 
 # Print out some info.
 echo "Submitting job with sbatch from directory: ${SLURM_SUBMIT_DIR}"
