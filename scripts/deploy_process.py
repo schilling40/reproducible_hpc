@@ -88,8 +88,14 @@ def main(
     replacement_dict["cochlea_job_name"] = "-".join(cochlea.split("_"))
 
     cochlea_content = cochlea.split("_")
+    version = ""
     if len(cochlea_content) != 4:
-        raise ValueError("Cochlea parameter does not have the correct format.")
+        if cochlea_content[4][0] != "v":
+            raise ValueError("Cochlea parameter does not have the correct format.")
+        else:
+            version = "_" + cochlea_content[4]
+            print(f"Processing version {cochlea_content[4]} of cochlea {''.join(cochlea_content[:3])}.")
+
     animal = cochlea_content[0]
     person = cochlea_content[1]
     number = cochlea_content[2]
@@ -98,7 +104,7 @@ def main(
     stains_str = "_".join(stains)
 
     prefix = "".join([animal, person])
-    replacement_dict["cochlea_data"] = f"{prefix}_{number.lstrip('0')}{side}_{stains_str}_fused.n5"
+    replacement_dict["cochlea_data"] = f"{prefix}_{number.lstrip('0')}{side}_{stains_str}_fused{version}.n5"
 
     if "SGN" in input_file:
         stain_position = stains.index("PV")
