@@ -28,7 +28,7 @@ export SCRIPT_DIR=$SCRIPT_REPO/scripts
 export INPUT=/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/<cochlea>/<cochlea_data>
 
 export OUTPUT_FOLDER=/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/predictions/<cochlea>/<sgn_version>
-export MODEL=/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/trained_models/SGN/v2_cochlea_distance_unet_SGN_supervised_2025-05-27/
+export MODEL=<model>
 export PREDICTION_INSTANCES=10
 export INPUT_KEY=<input_key>
 

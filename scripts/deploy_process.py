@@ -17,6 +17,25 @@ from datetime import date
 ARCHIVE_DIR = "/user/schilling40/u15000/job_archive"
 REPOSITORY_FILE = "/user/schilling40/u15000/reproducible_hpc/example/repository_list.txt"
 
+SGN_MODEL_DIR = "/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/trained_models/SGN"
+IHC_MODEL_DIR = "/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/trained_models/IHC"
+SYNAPSE_MODEL_DIR = "/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/trained_models/Synapses"
+
+SGN_MODELS = {
+    "SGN_v2": os.path.join(SGN_MODEL_DIR, "v2_cochlea_distance_unet_SGN_supervised_2025-05-27"),
+}
+
+IHC_MODELS = {
+    "IHC_v4b": os.path.join(IHC_MODEL_DIR, "v4_cochlea_distance_unet_IHC_supervised_2025-07-14"),
+    "IHC_v5": os.path.join(IHC_MODEL_DIR, "v5_cochlea_distance_unet_IHC_supervised_2025-08-20"),
+    "IHC_v6": os.path.join(IHC_MODEL_DIR, "v6_cochlea_distance_unet_IHC_supervised_2025-09-02"),
+    "IHC_v7": os.path.join(IHC_MODEL_DIR, "v7_cochlea_distance_unet_IHC_supervised_2025-09-08"),
+}
+
+SYNAPSE_MODELS={
+    "synapses_v3": os.path.join(SYNAPSE_MODEL_DIR, "synapse_detection_model_v3.pt"),
+}
+
 
 def get_script_path():
     # https://stackoverflow.com/questions/4934806/how-can-i-find-scripts-directory
@@ -109,14 +128,23 @@ def main(
     if "SGN" in input_file:
         stain_position = stains.index("PV")
         replacement_dict["input_key"] = f"setup{stain_position}/timepoint0/s0"
+        model_version = replacement_dict["sgn_version"]
+        if model_version not in SGN_MODELS.keys():
+            raise ValueError(f"Add missing model path. No match for model: {model_version}.")
+        replacement_dict["model"] = SGN_MODELS[model_version]
 
     elif "IHC" in input_file:
         stain_position = stains.index("Vglut3")
         replacement_dict["input_key"] = f"setup{stain_position}/timepoint0/s0"
+        model_version = replacement_dict["ihc_version"]
+        if model_version not in IHC_MODELS.keys():
+            raise ValueError(f"Add missing model path. No match for IHC model: {model_version}.")
+        replacement_dict["model"] = IHC_MODELS[model_version]
 
     elif "synapse" in input_file:
         stain_position = stains.index("CTBP2")
         replacement_dict["input_key"] = f"setup{stain_position}/timepoint0/s0"
+        replacement_dict["model"] = SYNAPSE_MODELS["synapses_v3"]
 
     else:
         replacement_dict["input_key_multi"] = "_".join([f"setup{i}/timepoint0/s0" for i in range(len(stains))])

@@ -33,7 +33,7 @@ export MASK_PATH=<cochlea>/images/ome-zarr/IHC_v4b.ome.zarr
 export OUTPUT_FOLDER=/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/predictions/<cochlea>/synapses_v3
 
 export INPUT_KEY="s0"
-export MODEL=/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/trained_models/Synapses/synapse_detection_model_v3.pt
+export MODEL=<model>
 export MAX_DISTANCE=3
 
 echo "OUTPUT_FOLDER $OUTPUT_FOLDER"
