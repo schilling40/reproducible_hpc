@@ -129,6 +129,7 @@ def main(
         stain_position = stains.index("PV")
         replacement_dict["input_key"] = f"setup{stain_position}/timepoint0/s0"
         model_version = replacement_dict["sgn_version"]
+        replacement_dict["masking"] = "sgn"
         if model_version not in SGN_MODELS.keys():
             raise ValueError(f"Add missing model path. No match for model: {model_version}.")
         replacement_dict["model"] = SGN_MODELS[model_version]
@@ -137,6 +138,7 @@ def main(
         stain_position = stains.index("Vglut3")
         replacement_dict["input_key"] = f"setup{stain_position}/timepoint0/s0"
         model_version = replacement_dict["ihc_version"]
+        replacement_dict["masking"] = "ihc"
         if model_version not in IHC_MODELS.keys():
             raise ValueError(f"Add missing model path. No match for IHC model: {model_version}.")
         replacement_dict["model"] = IHC_MODELS[model_version]

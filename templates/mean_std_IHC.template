@@ -21,7 +21,7 @@ export SCRIPT_DIR=$SCRIPT_REPO/scripts
 
 export INPUT=/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/<cochlea>/<cochlea_data>
 export OUTPUT_FOLDER=/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/predictions/<cochlea>/<ihc_version>
-export SEG_CLASS=<ihc_version>
+export SEG_MASKING=<masking>
 export INPUT_KEY=<input_key>
 
 echo "Input directory: ${INPUT}"
@@ -35,7 +35,7 @@ cmd_array=(	'import sys,os;'
 	'sys.path.insert(0,os.environ["SCRIPT_DIR"]);'
 	'import unet_prediction;'
 	'unet_prediction.run_unet_prediction_preprocess_slurm(input_path=os.environ["INPUT"],'
-	'output_folder=os.environ["OUTPUT_FOLDER"],seg_class=os.environ["SEG_CLASS"],'
+	'output_folder=os.environ["OUTPUT_FOLDER"],seg_class=os.environ["SEG_MASKING"],'
 	'input_key=os.environ["INPUT_KEY"])')
 cmd="${cmd_array[*]}"
 python -c "$cmd"
