@@ -33,7 +33,7 @@ IHC_MODELS = {
     "IHC_v9": os.path.join(IHC_MODEL_DIR, "v9_cochlea_distance_unet_IHC_supervised_2026-06-12"),
 }
 
-SYNAPSE_MODELS={
+SYNAPSE_MODELS = {
     "synapses_v3": os.path.join(SYNAPSE_MODEL_DIR, "synapse_detection_model_v3.pt"),
 }
 
@@ -43,12 +43,13 @@ def get_script_path():
     return os.path.dirname(os.path.realpath(sys.argv[0]))
 
 
-def extract_substrings(input_string):
-    """
-    Extract all substrings encompassed by < and > from the input string.
+def extract_substrings(
+    input_string: str,
+) -> list[str]:
+    """Extract all substrings encompassed by < and > from the input string.
 
     Args:
-        input_string (str): The input string containing substrings enclosed in < and >.
+        input_string: The input string containing substrings enclosed in < and >.
 
     Returns:
         list: A list of extracted substrings.
@@ -57,15 +58,18 @@ def extract_substrings(input_string):
     return re.findall(pattern, input_string)
 
 
-def replace_substrings_in_file(input_filename, output_filename, replacement_dict):
-    """
-    Read a file line by line, replace substrings enclosed in < and > based on a dictionary,
+def replace_substrings_in_file(
+    input_filename: str,
+    output_filename: str,
+    replacement_dict: dict,
+) -> None:
+    """Read a file line by line, replace substrings enclosed in < and > based on a dictionary,
     and write the modified lines to a new file.
 
     Args:
-        input_filename (str): Path to the input file.
-        output_filename (str): Path to the output file.
-        replacement_dict (dict): Dictionary mapping substrings to their replacements.
+        input_filename: Path to the input file.
+        output_filename: Path to the output file.
+        replacement_dict: Dictionary mapping substrings to their replacements.
     """
     try:
         # Open the input and output files
@@ -95,11 +99,11 @@ def replace_substrings_in_file(input_filename, output_filename, replacement_dict
 
 
 def main(
-        input_file,
-        json_file,
-        archive_dir,
-        repository_file,
-        run_script,
+    input_file: str,
+    json_file: str,
+    archive_dir: str,
+    repository_file: str,
+    run_script: str,
 ):
     with open(json_file, 'r') as myfile:
         data = myfile.read()
@@ -196,14 +200,15 @@ def main(
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
-        description="Update report of job efficiency, if last status was 'PENDING'.")
+        description="Fill in a template for an sbatch script using a JSON dictionary. "
+        "The new sbatch script is deployed to the cluster and an entry in the archive directory is created.")
 
-    parser.add_argument('input', type=str, help="Input file.")
-    parser.add_argument('json', type=str, help="JSON dictionary.")
+    parser.add_argument("-i", "--input", type=str, help="Input template.")
+    parser.add_argument("-j", "--json", type=str, help="JSON dictionary.")
 
     parser.add_argument("-a", "--archive_dir", type=str, default=ARCHIVE_DIR,
                         help="Directory to archive scripts and metadata.")
-    parser.add_argument('-r', "--repository_file", type=str, default=REPOSITORY_FILE,
+    parser.add_argument("-r", "--repository_file", type=str, default=REPOSITORY_FILE,
                         help="File containing git repositories to track.")
     parser.add_argument("--deploy", action="store_true", help="Run script.")
 

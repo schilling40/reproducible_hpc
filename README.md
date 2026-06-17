@@ -14,9 +14,14 @@ The current concept involves the usage of a single sbatch script for a specific 
 It should contain the date and a suffix in the file format `<date>_sbatch_<suffix>` with the date in format `yyyy-mm-dd`, e.g. `2025-03-19_sbatch_apply_unet.sbatch`.
 Further scripts might be connected to this script by using the same date and suffix format.
 
+## Archiving metadata
+The job information of an sbatch script is monitored and can be looked up using `reportseff -u <user_id>` for around one week after the initial submission.
+This information, among other pieces of information from the sbatch script, are extracted using `scripts/write_metadata.py`.
 
 ## Template concept
-Multiple templates are located in `templates`. Using `scripts/deploy_process.py` a JSON dictionary with parameters can be given as an input to fill blanks in the templates and use the resulting scripts for job submission.
+Multiple templates for common sbatch scripts are located in `templates`.
+This includes the application of trained neural networks for the segmentation of IHCs and SGNs, the detection of synapses, and the transformation of data into MoBIE format and its transfer to the S3 bucket.
+Using `scripts/deploy_process.py` a JSON dictionary with parameters can be given as an input to fill blanks in the templates and use the resulting scripts for job submission.
 
 ## Example
 

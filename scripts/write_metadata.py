@@ -182,11 +182,11 @@ def repository_status_to_dict(repository_file: str, metadict: dict) -> None:
 
 
 def main(
-        input_dir: str,
-        output_file: str = None,
-        jobid: int = None,
-        repository_file: str = None,
-        overwrite: bool = False,
+    input_dir: str,
+    output_file: str = None,
+    jobid: int = None,
+    repository_file: str = None,
+    overwrite: bool = False,
 ):
     """Extract metadata from an sbatch script.
 
@@ -210,7 +210,7 @@ def main(
             data = myfile.read()
         metadict = json.loads(data)
         sbatch_parameters_to_dict(sbatch_file, metadict=metadict)
-        reportseff_from_jobid(log_file,  metadict=metadict, jobid=jobid)
+        reportseff_from_jobid(log_file, metadict=metadict, jobid=jobid)
 
     else:
         metadict = init_metadict(input_dir)
