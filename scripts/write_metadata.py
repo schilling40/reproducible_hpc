@@ -8,6 +8,7 @@ A file containing git repositories can be used as an argument to archive the cur
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 
@@ -88,6 +89,66 @@ def sbatch_parameters_to_dict(sbatch_file: str, metadict: dict) -> None:
                     elif contents[1].split("=")[0] in param_list:
                         metadict[p["descr"]] = contents[1].split("=")[1].strip()
     myfile.close()
+
+
+def slurm_output_to_dict(slurm_file: str) -> dict:
+    """Parse the Job Information section from a slurm output file.
+
+    Handles both single-job files (slurm-<job_id>.out) and array-job files
+    (slurm-<job_id>_<array_index>.out).
+
+    Args:
+        slurm_file: Path to the slurm output file.
+
+    Returns:
+        Dictionary with parsed fields: file, array_index (if array job), submitted,
+        started, ended, elapsed_min, limit_min, cpus, nodes, core_hours.
+    """
+    filename = os.path.basename(slurm_file)
+    job_info = {"file": filename}
+
+    array_match = re.match(r'slurm-\d+_(\d+)\.out', filename)
+    if array_match:
+        job_info["array_index"] = int(array_match.group(1))
+
+    in_job_info = False
+    with open(slurm_file, 'rt', encoding='utf-8', errors='ignore') as f:
+        for line in f:
+            if 'Job Information' in line:
+                in_job_info = True
+                continue
+            if in_job_info:
+                if line.startswith('==='):
+                    break
+                line = line.strip()
+                if not line:
+                    continue
+                if line.startswith('Submitted:'):
+                    job_info['submitted'] = line.split(':', 1)[1].strip()
+                elif line.startswith('Started:'):
+                    job_info['started'] = line.split(':', 1)[1].strip()
+                elif line.startswith('Ended:'):
+                    job_info['ended'] = line.split(':', 1)[1].strip()
+                elif line.startswith('Elapsed:'):
+                    elapsed_match = re.search(r'Elapsed:\s*(\d+)\s*min', line)
+                    limit_match = re.search(r'Limit:\s*(\d+)\s*min', line)
+                    if elapsed_match:
+                        job_info['elapsed_min'] = int(elapsed_match.group(1))
+                    if limit_match:
+                        job_info['limit_min'] = int(limit_match.group(1))
+                elif line.startswith('CPUs:'):
+                    cpu_match = re.search(r'CPUs:\s*(\d+)', line)
+                    node_match = re.search(r'Nodes:\s*(\d+)', line)
+                    if cpu_match:
+                        job_info['cpus'] = int(cpu_match.group(1))
+                    if node_match:
+                        job_info['nodes'] = int(node_match.group(1))
+                elif 'core-hours' in line.lower():
+                    core_match = re.search(r'([\d.]+)\s*core-hours', line, re.IGNORECASE)
+                    if core_match:
+                        job_info['core_hours'] = float(core_match.group(1))
+
+    return job_info
 
 
 def reportseff_from_jobid(log_file: str, metadict: dict, jobid: int = None) -> None:
