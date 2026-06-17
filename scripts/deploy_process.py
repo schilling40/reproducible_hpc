@@ -30,6 +30,7 @@ IHC_MODELS = {
     "IHC_v5": os.path.join(IHC_MODEL_DIR, "v5_cochlea_distance_unet_IHC_supervised_2025-08-20"),
     "IHC_v6": os.path.join(IHC_MODEL_DIR, "v6_cochlea_distance_unet_IHC_supervised_2025-09-02"),
     "IHC_v7": os.path.join(IHC_MODEL_DIR, "v7_cochlea_distance_unet_IHC_supervised_2025-09-08"),
+    "IHC_v9": os.path.join(IHC_MODEL_DIR, "v9_cochlea_distance_unet_IHC_supervised_2026-06-12"),
 }
 
 SYNAPSE_MODELS={
@@ -150,6 +151,27 @@ def main(
 
     else:
         replacement_dict["input_key_multi"] = "_".join([f"setup{i}/timepoint0/s0" for i in range(len(stains))])
+
+    if "segment" in input_file:
+        watershed_params = os.path.join(replacement_dict["model"], "best_best_params.json")
+        if os.path.exists(watershed_params):
+            with open(watershed_params) as fh:
+                data = json.load(fh)
+            print(f"Loaded cached best params from {watershed_params}")
+            replacement_dict["center_distance_threshold"] = str(data["params"]["center_distance_threshold"])
+            replacement_dict["boundary_distance_threshold"] = str(data["params"]["boundary_distance_threshold"])
+            replacement_dict["distance_smoothing"] = str(data["params"]["distance_smoothing"])
+        else:
+            if "SGN" in input_file:
+                # default for SGN_v2
+                replacement_dict["center_distance_threshold"] = "0.4"
+                replacement_dict["boundary_threshold"] = "0.5"
+                replacement_dict["distance_smoothing"] = "0"
+            elif "IHC" in input_file:
+                # default for IHC_v4b
+                replacement_dict["center_distance_threshold"] = "0.5"
+                replacement_dict["boundary_distance_threshold"] = "0.6"
+                replacement_dict["distance_smoothing"] = "0.6"
 
     # values for MoBIE transfer
     replacement_dict["channel_multi"] = stains_str

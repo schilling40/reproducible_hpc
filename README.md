@@ -14,6 +14,10 @@ The current concept involves the usage of a single sbatch script for a specific 
 It should contain the date and a suffix in the file format `<date>_sbatch_<suffix>` with the date in format `yyyy-mm-dd`, e.g. `2025-03-19_sbatch_apply_unet.sbatch`.
 Further scripts might be connected to this script by using the same date and suffix format.
 
+
+## Template concept
+Multiple templates are located in `templates`. Using `scripts/deploy_process.py` a JSON dictionary with parameters can be given as an input to fill blanks in the templates and use the resulting scripts for job submission.
+
 ## Example
 
 An example for a use case showing an sbatch script, a log file containing the JobID, and the corresponding archived metadata are located in the `example` directory.
