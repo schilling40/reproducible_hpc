@@ -1,13 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=segment-unet-IHC_<cochlea_job_name>
-#SBATCH -t 08:00:00             # estimated time, adapt to your needs
+#SBATCH -t 07:00:00             # estimated time, adapt to your needs
 #SBATCH --mail-user=martin.schilling@med.uni-goettingen.de # change this to your mailaddress
 #SBATCH --mail-type=FAIL        # send mail when job begins and ends
 
 #SBATCH -p standard96s:shared         # the partition
 #SBATCH -A nim00007
 #SBATCH -c 16
-#SBATCH --mem 64G
+#SBATCH --mem 400G
 
 source ~/.bashrc
 micromamba activate sam
@@ -29,9 +29,9 @@ export SCRIPT_DIR=$SCRIPT_REPO/scripts
 export OUTPUT_FOLDER=/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/predictions/<cochlea>/<ihc_version>
 export MIN_SIZE=1000
 
-export CENTER_DISTANCE_THRESHOLD=0.5
-export BOUNDARY_DISTANCE_THRESHOLD=0.6
-export DISTANCE_SMOOTHING=0.6
+export CENTER_DISTANCE_THRESHOLD=<center_distance_threshold>
+export BOUNDARY_DISTANCE_THRESHOLD=<boundary_distance_threshold>
+export DISTANCE_SMOOTHING=<distance_smoothing>
 
 echo "Output directory: ${OUTPUT_FOLDER}"
 echo "CENTER_DISTANCE_THRESHOLD: ${CENTER_DISTANCE_THRESHOLD}"

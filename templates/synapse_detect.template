@@ -1,17 +1,19 @@
 #!/bin/bash
 #SBATCH --job-name=synapse-detect_<cochlea_job_name>
-#SBATCH -t 14:00:00             # estimated time, adapt to your needs
+#SBATCH -t 24:00:00             # estimated time, adapt to your needs
 #SBATCH --mail-user=martin.schilling@med.uni-goettingen.de # change this to your mailaddress
 #SBATCH --mail-type=FAIL        # send mail when job begins and ends
 
-#SBATCH -p grete:shared         # the partition
-#SBATCH -G A100:1               # For requesting 1 A100 GPU.
+#SBATCH -p standard96s:shared         # the partition
 #SBATCH -A nim00007
-#SBATCH -c 3
+#SBATCH -c 8
 #SBATCH --mem 400G
 
 source ~/.bashrc
 micromamba activate sam
+
+# -p grete:shared         # the partition
+# -G A100:1               # For requesting 1 A100 GPU.
 
 # Print out some info.
 echo "Submitting job with sbatch from directory: ${SLURM_SUBMIT_DIR}"
@@ -28,7 +30,7 @@ cd "$SCRIPT_REPO"/flamingo_tools/segmentation/ || exit
 export SCRIPT_DIR=$SCRIPT_REPO/scripts
 
 export INPUT_PATH=/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/<cochlea>/<cochlea_data>
-export OUTPUT_FOLDER=/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/predictions/<cochlea>/synapses_v3
+export OUTPUT_FOLDER=/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/predictions/<cochlea>/<synapse_version>
 
 export INPUT_KEY=<input_key>
 export MODEL=<model>

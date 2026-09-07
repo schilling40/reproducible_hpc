@@ -1,12 +1,12 @@
 #!/bin/bash
 #SBATCH --job-name=segment-unet-SGN_<cochlea_job_name>
-#SBATCH --time 12:00:00             # estimated time, adapt to your needs
+#SBATCH --time 24:00:00             # estimated time, adapt to your needs
 #SBATCH --mail-user=martin.schilling@med.uni-goettingen.de # change this to your mailaddress
 #SBATCH --mail-type=FAIL        # send mail when job begins and ends
 
 #SBATCH -p standard96s:shared         # the partition
 #SBATCH -A nim00007
-#SBATCH -c 12
+#SBATCH -c 8
 #SBATCH --mem 400G
 
 source ~/.bashrc

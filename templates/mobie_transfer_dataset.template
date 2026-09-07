@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=mobie_transfer_<cochlea_job_name>
-#SBATCH -t 07:30:00             # estimated time, adapt to your needs
+#SBATCH -t 09:00:00             # estimated time, adapt to your needs
 #SBATCH --mail-user=martin.schilling@med.uni-goettingen.de # change this to your mailaddress
 #SBATCH --mail-type=FAIL        # send mail when job begins and ends
 
@@ -22,4 +22,5 @@ MOBIE_PROJECT=/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/mobi
 echo "Transfer of <cochlea> from ""$MOBIE_PROJECT"" to S3"
 
 module load rclone
-rclone --progress copyto "$MOBIE_PROJECT"/<cochlea> cochlea-lightsheet:cochlea-lightsheet/<cochlea>
+rclone --progress copyto "$MOBIE_PROJECT"/<cochlea>/dataset.json cochlea-lightsheet:cochlea-lightsheet/<cochlea>/dataset.json
+rclone --progress copyto "$MOBIE_PROJECT"/<cochlea>/images/ome-zarr cochlea-lightsheet:cochlea-lightsheet/<cochlea>/images/ome-zarr

@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=synapse-marker_<cochlea_job_name>
-#SBATCH -t 01:10:00             # estimated time, adapt to your needs
+#SBATCH -t 01:30:00             # estimated time, adapt to your needs
 #SBATCH --mail-user=martin.schilling@med.uni-goettingen.de # change this to your mailaddress
 #SBATCH --mail-type=FAIL        # send mail when job begins and ends
 
@@ -8,7 +8,7 @@
 #SBATCH -G A100:1               # For requesting 1 A100 GPU.
 #SBATCH -A nim00007
 #SBATCH -c 1
-#SBATCH --mem 8G
+#SBATCH --mem 300G
 #SBATCH --constraint=inet
 
 source ~/.bashrc
@@ -29,8 +29,8 @@ cd "$SCRIPT_REPO"/flamingo_tools/segmentation/ || exit
 export SCRIPT_DIR=$SCRIPT_REPO/scripts
 
 export INPUT_PATH=<cochlea>/images/ome-zarr/CTBP2.ome.zarr
-export MASK_PATH=<cochlea>/images/ome-zarr/IHC_v4b.ome.zarr
-export OUTPUT_FOLDER=/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/predictions/<cochlea>/synapses_v3
+export MASK_PATH=<cochlea>/images/ome-zarr/<ihc_version>.ome.zarr
+export OUTPUT_FOLDER=/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/predictions/<cochlea>/<synapse_version>
 
 export INPUT_KEY="s0"
 export MODEL=<model>
