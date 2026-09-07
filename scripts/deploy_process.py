@@ -23,6 +23,7 @@ SYNAPSE_MODEL_DIR = "/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightshe
 
 SGN_MODELS = {
     "SGN_v2": os.path.join(SGN_MODEL_DIR, "v2_cochlea_distance_unet_SGN_supervised_2025-05-27"),
+    "SGN_v3": os.path.join(SGN_MODEL_DIR, "v3_cochlea_distance_unet_SGN_supervised_2026-07-10"),
 }
 
 IHC_MODELS = {
@@ -31,10 +32,13 @@ IHC_MODELS = {
     "IHC_v6": os.path.join(IHC_MODEL_DIR, "v6_cochlea_distance_unet_IHC_supervised_2025-09-02"),
     "IHC_v7": os.path.join(IHC_MODEL_DIR, "v7_cochlea_distance_unet_IHC_supervised_2025-09-08"),
     "IHC_v9": os.path.join(IHC_MODEL_DIR, "v9_cochlea_distance_unet_IHC_supervised_2026-06-12"),
+    "IHC_v10": os.path.join(IHC_MODEL_DIR, "v10_cochlea_distance_unet_IHC_supervised_2026-06-12"),
+    "IHC_v11": os.path.join(IHC_MODEL_DIR, "v11_cochlea_distance_unet_IHC_supervised_2026-07-20"),
 }
 
 SYNAPSE_MODELS = {
     "synapses_v3": os.path.join(SYNAPSE_MODEL_DIR, "synapse_detection_model_v3.pt"),
+    "synapses_v5": os.path.join(SYNAPSE_MODEL_DIR, "synapse_detection_model_v5.pt"),
 }
 
 
@@ -45,7 +49,7 @@ def get_script_path():
 
 def extract_substrings(
     input_string: str,
-) -> list[str]:
+) -> list:
     """Extract all substrings encompassed by < and > from the input string.
 
     Args:
@@ -120,6 +124,11 @@ def main(
             version = "_" + cochlea_content[4]
             print(f"Processing version {cochlea_content[4]} of cochlea {''.join(cochlea_content[:3])}.")
 
+    # convert int values to str
+    for key, item in replacement_dict.items():
+        if isinstance(item, int):
+            replacement_dict[key] = str(item)
+
     animal = cochlea_content[0]
     person = cochlea_content[1]
     number = cochlea_content[2]
@@ -151,7 +160,9 @@ def main(
     elif "synapse" in input_file:
         stain_position = stains.index("CTBP2")
         replacement_dict["input_key"] = f"setup{stain_position}/timepoint0/s0"
-        replacement_dict["model"] = SYNAPSE_MODELS["synapses_v3"]
+        if "synapse_version" not in list(replacement_dict.keys()):
+            replacement_dict["synapse_version"] = "synapses_v3"
+        replacement_dict["model"] = SYNAPSE_MODELS[replacement_dict["synapse_version"]]
 
     else:
         replacement_dict["input_key_multi"] = "_".join([f"setup{i}/timepoint0/s0" for i in range(len(stains))])

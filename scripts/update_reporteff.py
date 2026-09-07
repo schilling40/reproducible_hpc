@@ -344,7 +344,7 @@ def main(
     subfolders = [f.path for f in os.scandir(input_dir) if f.is_dir()]
 
     if pattern is not None:
-        subfolders = [s for s in subfolders if pattern in os.path.basename(s)]
+        subfolders = sorted(glob.glob(os.path.join(input_dir, f"*{pattern}*"), recursive=False))
         if len(subfolders) == 0:
             raise ValueError(f"No subfolders match pattern {pattern}.")
 
@@ -371,7 +371,7 @@ if __name__ == "__main__":
     parser.add_argument('input_dir', type=str, help="Input directory containing sbatch script.")
 
     parser.add_argument('-p', "--pattern", type=str, default=None,
-                        help="Pattern to match folders in job archive.")
+                        help="Pattern to match folders in job archive. Supports wildcards.")
     parser.add_argument('-s', "--slurm_dir", type=str, default=None,
                         help="Directory containing slurm output files (slurm-<job_id>.out or "
                              "slurm-<job_id>_<array_index>.out) to parse and store in metadata.")
