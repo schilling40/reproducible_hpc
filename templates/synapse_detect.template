@@ -1,16 +1,16 @@
 #!/bin/bash
 #SBATCH --job-name=synapse-detect_<cochlea_job_name>
 #SBATCH -t 24:00:00             # estimated time, adapt to your needs
-#SBATCH --mail-user=martin.schilling@med.uni-goettingen.de # change this to your mailaddress
+#SBATCH --mail-user=<user_address> # change this to your mailaddress
 #SBATCH --mail-type=FAIL        # send mail when job begins and ends
 
 #SBATCH -p standard96s:shared         # the partition
-#SBATCH -A nim00007
+#SBATCH -A <account_name>
 #SBATCH -c 8
 #SBATCH --mem 400G
 
 source ~/.bashrc
-micromamba activate sam
+micromamba activate <cochlea-net_environment>
 
 # -p grete:shared         # the partition
 # -G A100:1               # For requesting 1 A100 GPU.
@@ -24,13 +24,13 @@ echo "Current node: ${SLURM_NODELIST}"
 # Run the script
 #python myprogram.py $SLURM_ARRAY_TASK_ID
 
-SCRIPT_REPO=/user/schilling40/u15000/flamingo-tools
+SCRIPT_REPO=<flamingo_tools>
 cd "$SCRIPT_REPO"/flamingo_tools/segmentation/ || exit
 
 export SCRIPT_DIR=$SCRIPT_REPO/scripts
 
-export INPUT_PATH=/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/<cochlea>/<cochlea_data>
-export OUTPUT_FOLDER=/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/predictions/<cochlea>/<synapse_version>
+export INPUT_PATH=<data_dir>/<cochlea>/<cochlea_data>
+export OUTPUT_FOLDER=<data_dir>/predictions/<cochlea>/<synapse_version>
 
 export INPUT_KEY=<input_key>
 export MODEL=<model>
@@ -42,7 +42,7 @@ if [ ! -d "$OUTPUT_FOLDER" ] ; then
 	mkdir -p "$OUTPUT_FOLDER"
 fi
 
-python ~/flamingo-tools/scripts/synapse_marker_detection/run_prediction.py \
+python "$SCRIPT_REPO"/scripts/synapse_marker_detection/run_prediction.py \
 	--input $INPUT_PATH \
 	--input_key $INPUT_KEY \
 	--output_folder $OUTPUT_FOLDER \

@@ -1,0 +1,39 @@
+{
+    "user_address": "yourmail@gwdg.de",
+    "account_name": "your_account",
+
+    "cochlea-net_environment": "sam",
+    "mobie_environment": "mobie",
+
+    "archive_dir": "/path/to/job_archive",
+    "data_dir": "/path/to/cochlea-lightsheet",
+    "mobie_project": "/path/to/cochlea-lightsheet/mobie_project/cochlea-lightsheet",
+    "s3_remote": "cochlea-lightsheet:cochlea-lightsheet",
+
+    "repositories": {
+        "flamingo_tools": "/path/to/flamingo-tools",
+        "micro_sam": "/path/to/micro-sam",
+        "mobie_utils_python": "/path/to/mobie-utils-python",
+        "reproducible_hpc": "/path/to/reproducible_hpc"
+    },
+
+    "models": {
+        "SGN": {
+            "SGN_v2": "/path/to/cochlea-lightsheet/trained_models/SGN/v2_cochlea_distance_unet_SGN_supervised_2025-05-27",
+            "SGN_v3": "/path/to/cochlea-lightsheet/trained_models/SGN/v3_cochlea_distance_unet_SGN_supervised_2026-07-10"
+        },
+        "IHC": {
+            "IHC_v4b": "/path/to/cochlea-lightsheet/trained_models/IHC/v4_cochlea_distance_unet_IHC_supervised_2025-07-14",
+            "IHC_v5": "/path/to/cochlea-lightsheet/trained_models/IHC/v5_cochlea_distance_unet_IHC_supervised_2025-08-20",
+            "IHC_v6": "/path/to/cochlea-lightsheet/trained_models/IHC/v6_cochlea_distance_unet_IHC_supervised_2025-09-02",
+            "IHC_v7": "/path/to/cochlea-lightsheet/trained_models/IHC/v7_cochlea_distance_unet_IHC_supervised_2025-09-08",
+            "IHC_v9": "/path/to/cochlea-lightsheet/trained_models/IHC/v9_cochlea_distance_unet_IHC_supervised_2026-06-12",
+            "IHC_v10": "/path/to/cochlea-lightsheet/trained_models/IHC/v10_cochlea_distance_unet_IHC_supervised_2026-06-12",
+            "IHC_v11": "/path/to/cochlea-lightsheet/trained_models/IHC/v11_cochlea_distance_unet_IHC_supervised_2026-07-20"
+        },
+        "Synapses": {
+            "synapses_v3": "/path/to/cochlea-lightsheet/trained_models/Synapses/synapse_detection_model_v3.pt",
+            "synapses_v5": "/path/to/cochlea-lightsheet/trained_models/Synapses/synapse_detection_model_v5.pt"
+        }
+    }
+}

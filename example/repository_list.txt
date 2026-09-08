@@ -1,3 +1,3 @@
-flamingo-tools	/user/schilling40/u15000/flamingo-tools
-micro-sam	/user/schilling40/u15000/micro-sam
-reproducible_hpc	/user/schilling40/u15000/reproducible_hpc
+flamingo-tools	/path/to/flamingo-tools
+micro-sam	/path/to/micro-sam
+reproducible_hpc	/path/to/reproducible_hpc

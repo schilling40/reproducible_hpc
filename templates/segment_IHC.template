@@ -1,16 +1,16 @@
 #!/bin/bash
 #SBATCH --job-name=segment-unet-IHC_<cochlea_job_name>
 #SBATCH -t 07:00:00             # estimated time, adapt to your needs
-#SBATCH --mail-user=martin.schilling@med.uni-goettingen.de # change this to your mailaddress
+#SBATCH --mail-user=<user_address> # change this to your mailaddress
 #SBATCH --mail-type=FAIL        # send mail when job begins and ends
 
 #SBATCH -p standard96s:shared         # the partition
-#SBATCH -A nim00007
+#SBATCH -A <account_name>
 #SBATCH -c 16
 #SBATCH --mem 400G
 
 source ~/.bashrc
-micromamba activate sam
+micromamba activate <cochlea-net_environment>
 
 # Print out some info.
 echo "Submitting job with sbatch from directory: ${SLURM_SUBMIT_DIR}"
@@ -18,15 +18,14 @@ echo "Home directory: ${HOME}"
 echo "Working directory: $PWD"
 echo "Current node: ${SLURM_NODELIST}"
 
-
 # Run the script
 #python myprogram.py $SLURM_ARRAY_TASK_ID
 
-SCRIPT_REPO=/user/schilling40/u15000/flamingo-tools
+SCRIPT_REPO=<flamingo_tools>
 cd "$SCRIPT_REPO"/flamingo_tools/segmentation/ || exit
 
 export SCRIPT_DIR=$SCRIPT_REPO/scripts
-export OUTPUT_FOLDER=/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/predictions/<cochlea>/<ihc_version>
+export OUTPUT_FOLDER=<data_dir>/predictions/<cochlea>/<ihc_version>
 export MIN_SIZE=1000
 
 export CENTER_DISTANCE_THRESHOLD=<center_distance_threshold>

@@ -1,26 +1,26 @@
 #!/bin/bash
 #SBATCH --job-name=mobie_<cochlea_job_name>
 #SBATCH -t 01:30:00             # estimated time, adapt to your needs
-#SBATCH --mail-user=martin.schilling@med.uni-goettingen.de # change this to your mailaddress
+#SBATCH --mail-user=<user_address> # change this to your mailaddress
 #SBATCH --mail-type=FAIL        # send mail when job begins and ends
 
 #SBATCH -p standard96s:shared         # the partition
-#SBATCH -A nim00007
+#SBATCH -A <account_name>
 #SBATCH -c 6
 #SBATCH --mem 400G
 
 source ~/.bashrc
-micromamba activate mobie
+micromamba activate <mobie_environment>
 
 # Run the script
 
-SCRIPT_REPO=/user/schilling40/u15000/mobie-utils-python
+SCRIPT_REPO=<mobie_utils_python>
 SCRIPT_DIR=$SCRIPT_REPO/mobie
 
-MOBIE_PROJECT=/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/mobie_project/cochlea-lightsheet
+MOBIE_PROJECT=<mobie_project>
 
 COCHLEA=<cochlea>
-INPUT=/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/<cochlea>/<cochlea_data>
+INPUT=<data_dir>/<cochlea>/<cochlea_data>
 
 RESOLUTION="[0.38,0.38,0.38]"
 SCALE_FACTORS="[[2,2,2],[2,2,2],[2,2,2],[2,2,2],[2,2,2],[2,2,2]]"

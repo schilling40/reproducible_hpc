@@ -6,6 +6,20 @@ The goal is to make the usage of HPC resources more reproducible by archiving me
 
 Feedback is appreciated.
 
+## Setup
+
+The paths and names which are specific to a cluster account are collected in `scripts/settings.json`.
+This file is not tracked by git, so that no absolute path enters the repository.
+Copy the example file once and adapt the values to your account:
+
+```
+cp scripts/settings.example.json scripts/settings.json
+```
+
+The file contains the mail address and the Slurm account for the sbatch header, the directories of the data and of the job archive, the names of the micromamba environments, the local paths of the git repositories, and the paths of the trained models.
+`scripts/deploy_process.py` reads the file and fills the values into the templates.
+Use the option `-s` to select a different settings file.
+
 ## Current concept
 
 Jobs are submitted to the cluster using a JobID. The JobID has the benefit of being inherently unique, so it could be used as the sole identifier of a script and related data.
@@ -22,6 +36,9 @@ This information, among other pieces of information from the sbatch script, are 
 Multiple templates for common sbatch scripts are located in `templates`.
 This includes the application of trained neural networks for the segmentation of IHCs and SGNs, the detection of synapses, and the transformation of data into MoBIE format and its transfer to the S3 bucket.
 Using `scripts/deploy_process.py` a JSON dictionary with parameters can be given as an input to fill blanks in the templates and use the resulting scripts for job submission.
+The templates contain no absolute path.
+A blank which is specific to a cluster account is filled from `scripts/settings.json`, a blank which is specific to a job is filled from the parameter dictionary.
+A blank without a value raises an error, so that no incomplete sbatch script is written.
 
 ## Example
 

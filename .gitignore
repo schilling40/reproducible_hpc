@@ -1,0 +1,4 @@
+scripts/settings.json
+__pycache__/
+*.pyc
+.flake8

@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=apply-unet-SGN_<cochlea_job_name>
 #SBATCH -t 02:00:00             # estimated time, adapt to your needs
-#SBATCH --mail-user=martin.schilling@med.uni-goettingen.de # change this to your mailaddress
+#SBATCH --mail-user=<user_address> # change this to your mailaddress
 #SBATCH --mail-type=FAIL        # send mail when job begins and ends
 
 #SBATCH -p grete:shared         # the partition
@@ -11,7 +11,7 @@
 #SBATCH -a 0-9
 
 source ~/.bashrc
-micromamba activate sam
+micromamba activate <cochlea-net_environment>
 
 # Print out some info.
 echo "Submitting job with sbatch from directory: ${SLURM_SUBMIT_DIR}"
@@ -21,13 +21,13 @@ echo "Current node: ${SLURM_NODELIST}"
 
 # Run the script
 
-SCRIPT_REPO=/user/schilling40/u15000/flamingo-tools
+SCRIPT_REPO=<flamingo_tools>
 cd "$SCRIPT_REPO"/flamingo_tools/segmentation/ || exit
 
 export SCRIPT_DIR=$SCRIPT_REPO/scripts
-export INPUT=/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/<cochlea>/<cochlea_data>
+export INPUT=<data_dir>/<cochlea>/<cochlea_data>
 
-export OUTPUT_FOLDER=/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/predictions/<cochlea>/<sgn_version>
+export OUTPUT_FOLDER=<data_dir>/predictions/<cochlea>/<sgn_version>
 export MODEL=<model>
 export PREDICTION_INSTANCES=10
 export INPUT_KEY=<input_key>

@@ -1,11 +1,11 @@
 #!/bin/bash
 #SBATCH --job-name=mobie_transfer_<cochlea_job_name>
 #SBATCH -t 09:00:00             # estimated time, adapt to your needs
-#SBATCH --mail-user=martin.schilling@med.uni-goettingen.de # change this to your mailaddress
+#SBATCH --mail-user=<user_address> # change this to your mailaddress
 #SBATCH --mail-type=FAIL        # send mail when job begins and ends
 
 #SBATCH -p standard96s:shared         # the partition
-#SBATCH -A nim00007
+#SBATCH -A <account_name>
 #SBATCH -c 1
 #SBATCH --mem 4G
 #SBATCH --constraint=inet
@@ -14,13 +14,13 @@ source ~/.bashrc
 
 # Run the script
 
-SCRIPT_REPO=/user/schilling40/u15000/mobie-utils-python
+SCRIPT_REPO=<mobie_utils_python>
 SCRIPT_DIR=$SCRIPT_REPO/mobie
 
-MOBIE_PROJECT=/mnt/vast-nhr/projects/nim00007/data/moser/cochlea-lightsheet/mobie_project/cochlea-lightsheet
+MOBIE_PROJECT=<mobie_project>
 
 echo "Transfer of <cochlea> from ""$MOBIE_PROJECT"" to S3"
 
 module load rclone
-rclone --progress copyto "$MOBIE_PROJECT"/<cochlea>/dataset.json cochlea-lightsheet:cochlea-lightsheet/<cochlea>/dataset.json
-rclone --progress copyto "$MOBIE_PROJECT"/<cochlea>/images/ome-zarr cochlea-lightsheet:cochlea-lightsheet/<cochlea>/images/ome-zarr
+rclone --progress copyto "$MOBIE_PROJECT"/<cochlea>/dataset.json <s3_remote>/<cochlea>/dataset.json
+rclone --progress copyto "$MOBIE_PROJECT"/<cochlea>/images/ome-zarr <s3_remote>/<cochlea>/images/ome-zarr
