@@ -1,4 +1,4 @@
-scripts/settings.json
+utils/settings.json
 __pycache__/
 *.pyc
 .flake8

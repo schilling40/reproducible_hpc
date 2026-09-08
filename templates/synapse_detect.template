@@ -29,7 +29,7 @@ cd "$SCRIPT_REPO"/flamingo_tools/segmentation/ || exit
 
 export SCRIPT_DIR=$SCRIPT_REPO/scripts
 
-export INPUT_PATH=<data_dir>/<cochlea>/<cochlea_data>
+export INPUT=<data_dir>/<cochlea>/<cochlea_data>
 export OUTPUT_FOLDER=<data_dir>/predictions/<cochlea>/<synapse_version>
 
 export INPUT_KEY=<input_key>
@@ -43,7 +43,7 @@ if [ ! -d "$OUTPUT_FOLDER" ] ; then
 fi
 
 python "$SCRIPT_REPO"/scripts/synapse_marker_detection/run_prediction.py \
-	--input $INPUT_PATH \
+	--input $INPUT \
 	--input_key $INPUT_KEY \
 	--output_folder $OUTPUT_FOLDER \
 	--model $MODEL

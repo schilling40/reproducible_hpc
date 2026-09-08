@@ -6,240 +6,15 @@ Script for extracting metadata from an sbatch script and storing it in a JSON fi
 A file containing git repositories can be used as an argument to archive the current git hash of the repository.
 """
 import argparse
-import json
 import os
-import re
-import subprocess
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
-def init_metadict(input_dir: str) -> dict:
-    """Initialize dictionary containing metadata based on the name of the input directory.
-
-    Args:
-        input_dir: The input directory should follow the naming scheme <date>_<suffix>, date formatted as YYYY-MM-DD
-
-    Returns:
-        Dictionary containing date and suffix information
-    """
-
-    input_dir = os.path.abspath(input_dir)
-
-    # evaluate directory name to extract date and suffix
-    input_str = input_dir.split("/")[-1]
-
-    contents = input_str.split("_")
-
-    if len(contents) < 2:
-        sys.exit("Check correct format of input directory: 'yyy-mm-dd_suffix'.")
-
-    date = contents[0]
-    suffix = "_".join(contents[1:])
-
-    metadict = {"date": date}
-    metadict["task"] = suffix
-    return metadict
-
-
-def sbatch_parameters_to_dict(sbatch_file: str, metadict: dict) -> None:
-    """Add parameters contained in an sbatch file to an existing dictionary containing metadata.
-
-    Args:
-        sbatch_file: A job script for slurm containing #SBATCH options
-        metadict: Dictionary containing metadata for slurm job
-    """
-    pattern = {"#SBATCH"}
-    parameter_dict = [
-        {"param": ["-A", "--account"],
-         "descr": "account"},
-
-        {"param": ["-a", "--array"],
-         "descr": "Job array"},
-
-        {"param": ["-c", "--cpus-per-task"],
-         "descr": "cpus-per-task"},
-
-        {"param": ["-G", "--gpus"],
-         "descr": "gpu"},
-
-        {"param": ["--job-name"],
-         "descr": "job-name"},
-
-        {"param": ["--mail-user"],
-         "descr": "mail-user"},
-
-        {"param": "--mem",
-         "descr": "Memory-per-node"},
-
-        {"param": ["-t", "--time"],
-         "descr": "runtime"},
-
-        {"param": ["-p", "--partition"],
-         "descr": "partition"},
-    ]
-
-    with open(sbatch_file, 'rt', encoding="utf8", errors='ignore') as myfile:
-        for line in myfile:
-            if all(s in line for s in pattern):
-                contents = line.split(" ")
-                for p in parameter_dict:
-                    param_list = p["param"] if isinstance(p["param"], list) else [p["param"]]
-                    if contents[1] in param_list:
-                        metadict[p["descr"]] = contents[2].strip()
-                    elif contents[1].split("=")[0] in param_list:
-                        metadict[p["descr"]] = contents[1].split("=")[1].strip()
-    myfile.close()
-
-
-def slurm_output_to_dict(slurm_file: str) -> dict:
-    """Parse the Job Information section from a slurm output file.
-
-    Handles both single-job files (slurm-<job_id>.out) and array-job files
-    (slurm-<job_id>_<array_index>.out).
-
-    Args:
-        slurm_file: Path to the slurm output file.
-
-    Returns:
-        Dictionary with parsed fields: file, array_index (if array job), submitted,
-        started, ended, elapsed_min, limit_min, cpus, nodes, core_hours.
-    """
-    filename = os.path.basename(slurm_file)
-    job_info = {"file": filename}
-
-    array_match = re.match(r'slurm-\d+_(\d+)\.out', filename)
-    if array_match:
-        job_info["array_index"] = int(array_match.group(1))
-
-    in_job_info = False
-    with open(slurm_file, 'rt', encoding='utf-8', errors='ignore') as f:
-        for line in f:
-            if 'Job Information' in line:
-                in_job_info = True
-                continue
-            if in_job_info:
-                if line.startswith('==='):
-                    break
-                line = line.strip()
-                if not line:
-                    continue
-                if line.startswith('Submitted:'):
-                    job_info['submitted'] = line.split(':', 1)[1].strip()
-                elif line.startswith('Started:'):
-                    job_info['started'] = line.split(':', 1)[1].strip()
-                elif line.startswith('Ended:'):
-                    job_info['ended'] = line.split(':', 1)[1].strip()
-                elif line.startswith('Elapsed:'):
-                    elapsed_match = re.search(r'Elapsed:\s*(\d+)\s*min', line)
-                    limit_match = re.search(r'Limit:\s*(\d+)\s*min', line)
-                    if elapsed_match:
-                        job_info['elapsed_min'] = int(elapsed_match.group(1))
-                    if limit_match:
-                        job_info['limit_min'] = int(limit_match.group(1))
-                elif line.startswith('CPUs:'):
-                    cpu_match = re.search(r'CPUs:\s*(\d+)', line)
-                    node_match = re.search(r'Nodes:\s*(\d+)', line)
-                    if cpu_match:
-                        job_info['cpus'] = int(cpu_match.group(1))
-                    if node_match:
-                        job_info['nodes'] = int(node_match.group(1))
-                elif 'core-hours' in line.lower():
-                    core_match = re.search(r'([\d.]+)\s*core-hours', line, re.IGNORECASE)
-                    if core_match:
-                        job_info['core_hours'] = float(core_match.group(1))
-
-    return job_info
-
-
-def reportseff_from_jobid(log_file: str, metadict: dict, jobid: int = None) -> None:
-    """Add information about the efficiency of the submitted job to a dictionary containing metadata.
-    The information is obtained through the command 'reportseff -u <user-id>',
-    which is available for seven days after job submission.
-    The dictionary is only updated, if the JobID was found within the output of the shell command.
-
-    Args:
-        log_file: Text file containing one or multiple lines with JobIDs. Only the last JobID is evaluated.
-        jobid: JobID of slurm job
-        metadict: Dictionary containing metadata for slurm job
-    """
-    if jobid is None:
-        if os.path.isfile(log_file):
-            with open(log_file, 'rt', encoding="utf8", errors='ignore') as myfile:
-                for line in myfile:
-                    content = line.strip()
-                    if 0 != len(content):
-                        jobid = line.strip().split()[0]
-            myfile.close()
-        else:
-            sys.exit("Provide either a JobID or a log file containing a JobID")
-    else:
-        print(f"Using manually provided JobID {jobid}")
-
-    metadict["jobid"] = jobid
-    user_id = subprocess.run(['whoami'], stdout=subprocess.PIPE).stdout.decode('utf-8').strip()
-
-    result = subprocess.run(['reportseff', '-u', user_id], stdout=subprocess.PIPE).stdout.decode('utf-8')
-
-    lines = result.split("\n")
-    reports_eff_list = []
-    job_id_found = False
-
-    for line in lines:
-        contents = line.split()
-        if len(contents) > 0 and jobid in contents[0]:
-            job_id_found = True
-            reports_eff = {"JobID": contents[0]}
-            reports_eff["State"] = contents[1]
-            reports_eff["Elapsed"] = contents[2]
-            reports_eff["TimeEff"] = contents[3]
-            reports_eff["CPUEff"] = contents[4]
-            reports_eff["MemEff"] = contents[5]
-            reports_eff_list.append(reports_eff)
-
-    # do not overwrite Reportseff if JobID is not found and entry already exists
-    if job_id_found:
-        metadict["Reportseff"] = reports_eff_list
-    elif "Reportseff" not in metadict:
-        metadict["Reportseff"] = []
-
-
-def repository_status_to_dict(repository_file: str, metadict: dict) -> None:
-    """Add information about git repositories to dictionary containing metadata.
-    Multiple git repositories can be given within each line containing <repository_name>\t<repository_path>.
-    The has of the git commit and the status of the repository ('clean' or 'dirty') are tracked.
-
-    Args:
-        repository_file: File containing name and file path of git repositories.
-        metadict: Dictionary containing metadata.
-    """
-    repo_list = []
-    if os.path.isfile(repository_file):
-        with open(repository_file, 'rt', encoding="utf8", errors='ignore') as myfile:
-            for line in myfile:
-                content = line.strip().split()
-                if len(content) != 0:
-                    if len(content) != 2:
-                        sys.exit("Ensure that the file containing repositories has the correct format.")
-                    else:
-                        repo_name = content[0]
-                        repo_path = content[1]
-                    if os.path.isdir(repo_path):
-                        repo_version = subprocess.run(["git", "rev-parse", "HEAD"],
-                                                      cwd=repo_path, stdout=subprocess.PIPE).stdout.decode('utf-8')
-                        git_status_out = subprocess.run(["git", "status", "--porcelain"],
-                                                        cwd=repo_path, stdout=subprocess.PIPE).stdout.decode('utf-8')
-                        if len(git_status_out) == 0:
-                            git_status = "clean"
-                        else:
-                            git_status = "dirty"
-
-                        repo_list.append({"repo_name": repo_name,
-                                          "repo_version": repo_version.strip(),
-                                          "status": git_status})
-                    else:
-                        print("Repository path " + repo_path + " could not be resolved.")
-        myfile.close()
-    metadict["Repositories"] = repo_list
+from utils.metadata import LOG_FILE, METADATA_FILE, SBATCH_FILE  # noqa: E402
+from utils.metadata import init_metadict, read_metadata, write_metadata  # noqa: E402
+from utils.repositories import repository_status_to_dict  # noqa: E402
+from utils.slurm import reportseff_from_jobid, sbatch_parameters_to_dict  # noqa: E402
 
 
 def main(
@@ -259,17 +34,15 @@ def main(
         overwrite: Flag for overwriting metadata information
     """
     if output_file is None:
-        output_file = os.path.join(input_dir, "metadata.json")
+        output_file = os.path.join(input_dir, METADATA_FILE)
     else:
         output_file = os.path.abspath(output_file)
 
-    sbatch_file = os.path.join(input_dir, "sbatch.sbatch")
-    log_file = os.path.join(input_dir, "log.txt")
+    sbatch_file = os.path.join(input_dir, SBATCH_FILE)
+    log_file = os.path.join(input_dir, LOG_FILE)
 
     if os.path.isfile(output_file) and not overwrite:
-        with open(output_file, 'r') as myfile:
-            data = myfile.read()
-        metadict = json.loads(data)
+        metadict = read_metadata(output_file)
         sbatch_parameters_to_dict(sbatch_file, metadict=metadict)
         reportseff_from_jobid(log_file, metadict=metadict, jobid=jobid)
 
@@ -281,7 +54,7 @@ def main(
         if repository_file is not None:
             repository_status_to_dict(repository_file, metadict=metadict)
 
-    json.dump(metadict, open(output_file, 'w'), sort_keys=False, indent='\t', separators=(',', ': '))
+    write_metadata(metadict, output_file)
 
 
 if __name__ == "__main__":
@@ -300,4 +73,7 @@ if __name__ == "__main__":
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing JSON file.")
     args = parser.parse_args()
 
-    main(args.input_dir, args.output, args.jobid, args.repository_file, args.overwrite)
+    try:
+        main(args.input_dir, args.output, args.jobid, args.repository_file, args.overwrite)
+    except (FileNotFoundError, ValueError) as exc:
+        sys.exit(str(exc))

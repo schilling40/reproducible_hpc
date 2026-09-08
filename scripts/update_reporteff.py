@@ -2,20 +2,29 @@
 # -- coding: utf-8 --
 """author: Martin Schilling (martin.schilling@med.uni-goettingen.de), 2025
 
-Script for extracting metadata from an sbatch script and storing it in a JSON file for better accessibility.
-A file containing git repositories can be used as an argument to archive the current git hash of the repository.
+Script for updating the archived metadata of Slurm jobs.
+The efficiency report of a running or pending job is refreshed, the information of a slurm output file
+can be added, and the efficiency across the archived jobs can be summarised.
 """
 import argparse
 import glob
-import json
 import os
 import statistics
+import sys
 from datetime import date
 from typing import List, Optional
 
-from write_metadata import reportseff_from_jobid
-from write_metadata import sbatch_parameters_to_dict
-from write_metadata import slurm_output_to_dict
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+
+from utils.metadata import LOG_FILE, METADATA_FILE, SBATCH_FILE  # noqa: E402
+from utils.metadata import as_list, jobids_from_log, read_metadata, write_metadata  # noqa: E402
+from utils.slurm import reportseff_from_jobid, sbatch_parameters_to_dict  # noqa: E402
+from utils.slurm import slurm_output_files, slurm_output_to_dict  # noqa: E402
+
+# The efficiency report of a job is available for around one week after the submission.
+REPORTSEFF_MAX_DAYS = 8
+
+UNFINISHED_STATES = ("RUNNING", "PENDING")
 
 
 def update_sbatch_data(subfolders: List[str]):
@@ -27,13 +36,11 @@ def update_sbatch_data(subfolders: List[str]):
     update_dir = []
 
     for folder in subfolders:
-        metadata = os.path.join(folder, "metadata.json")
+        metadata = os.path.join(folder, METADATA_FILE)
         if os.path.isfile(metadata):
-            with open(metadata, 'r') as myfile:
-                data = myfile.read()
-            metadict = json.loads(data)
+            metadict = read_metadata(metadata)
 
-            sbatch_file = os.path.join(folder, "sbatch.sbatch")
+            sbatch_file = os.path.join(folder, SBATCH_FILE)
             sbatch_dict = {}
             sbatch_parameters_to_dict(sbatch_file, sbatch_dict)
 
@@ -47,8 +54,7 @@ def update_sbatch_data(subfolders: List[str]):
                     metadict[key] = value
 
             if folder in update_dir:
-                output_file = os.path.join(folder, "metadata.json")
-                json.dump(metadict, open(output_file, 'w'), sort_keys=False, indent='\t', separators=(',', ': '))
+                write_metadata(metadict, metadata)
 
     update_dir = list(set(update_dir))
     update_dir.sort()
@@ -66,26 +72,23 @@ def update_reporteff(subfolders: List[str]):
     Args:
         subfolders: List of subfolders containing metadata in the format 'metadata.json'
     """
-    overwrite_states = ["RUNNING", "PENDING"]
     update_dir = []
 
     for folder in subfolders:
-        metadata = os.path.join(folder, "metadata.json")
+        metadata = os.path.join(folder, METADATA_FILE)
         if os.path.isfile(metadata):
-            with open(metadata, 'r') as myfile:
-                data = myfile.read()
-            metadict = json.loads(data)
+            metadict = read_metadata(metadata)
 
             # check for dates in the last 8 days
             date_str = [int(i) for i in metadict["date"].split("-")]
             job_date = date(date_str[0], date_str[1], date_str[2])
             days_past = date.today() - job_date
-            if days_past.days > 8:
+            if days_past.days > REPORTSEFF_MAX_DAYS:
                 continue
 
-            reports = metadict["Reportseff"] if isinstance(metadict["Reportseff"], list) else [metadict["Reportseff"]]
+            reports = as_list(metadict["Reportseff"])
             for report in reports:
-                if report["State"] in overwrite_states:
+                if report["State"] in UNFINISHED_STATES:
                     update_dir.append(folder)
                     break
 
@@ -94,16 +97,13 @@ def update_reporteff(subfolders: List[str]):
 
     for folder in update_dir:
         print(f"Updating efficiency report of folder {folder}.")
-        log_file = os.path.join(folder, "log.txt")
-        metadata = os.path.join(folder, "metadata.json")
+        log_file = os.path.join(folder, LOG_FILE)
+        metadata = os.path.join(folder, METADATA_FILE)
 
-        with open(metadata, 'r') as myfile:
-            data = myfile.read()
-        metadict = json.loads(data)
+        metadict = read_metadata(metadata)
         reportseff_from_jobid(log_file, metadict=metadict, jobid=None)
 
-        output_file = os.path.join(folder, "metadata.json")
-        json.dump(metadict, open(output_file, 'w'), sort_keys=False, indent='\t', separators=(',', ': '))
+        write_metadata(metadict, metadata)
 
     if len(update_dir) == 0:
         print("All directories contain updated efficiency reports.")
@@ -121,50 +121,33 @@ def check_metadata(subfolders: List[str]):
     for folder in subfolders:
         folder_name = os.path.basename(folder)
         contents = folder_name.split("_")
-        date = contents[0]
+        folder_date = contents[0]
         task = "_".join(contents[1:])
 
-        log_file = os.path.join(folder, "log.txt")
-        metadata = os.path.join(folder, "metadata.json")
+        log_file = os.path.join(folder, LOG_FILE)
+        metadata = os.path.join(folder, METADATA_FILE)
 
         if os.path.isfile(metadata):
-            with open(metadata, 'r') as myfile:
-                data = myfile.read()
-            metadict = json.loads(data)
+            metadict = read_metadata(metadata)
 
-            if metadict["date"] != date:
+            if metadict["date"] != folder_date:
                 update_metadata.append(folder)
-                metadict["date"] = date
+                metadict["date"] = folder_date
 
             if metadict["task"] != task:
                 metadict["task"] = task
                 update_metadata.append(folder)
 
-            def check_old_jobid(log_file, jobid_ref):
-                jobids = []
-                if os.path.isfile(log_file):
-                    with open(log_file, 'rt', encoding="utf8", errors='ignore') as myfile:
-                        for line in myfile:
-                            content = line.strip()
-                            if len(content) != 0:
-                                jobid = line.strip().split()[0]
-                                jobids.append(jobid)
-                if jobid_ref in jobids:
-                    return True
-                else:
-                    return False
-
             # check if JobID of efficiency report is identical with JobID of log
-            reports = metadict["Reportseff"] if isinstance(metadict["Reportseff"], list) else [metadict["Reportseff"]]
+            reports = as_list(metadict["Reportseff"])
             for report in reports:
                 if metadict["jobid"] not in report["JobID"]:
-                    if not check_old_jobid(log_file, metadict["jobid"]):
+                    if metadict["jobid"] not in jobids_from_log(log_file):
                         metadict["Reportseff"] = []
                     reportseff_from_jobid(log_file, metadict, jobid=metadict["jobid"])
                     update_metadata.append(folder)
 
-            output_file = os.path.join(folder, "metadata.json")
-            json.dump(metadict, open(output_file, 'w'), sort_keys=False, indent='\t', separators=(',', ': '))
+            write_metadata(metadict, metadata)
 
     update_metadata = list(set(update_metadata))
     update_metadata.sort()
@@ -187,21 +170,17 @@ def update_slurm_output(subfolders: List[str], slurm_dir: str):
     update_dir = []
 
     for folder in subfolders:
-        metadata = os.path.join(folder, "metadata.json")
+        metadata = os.path.join(folder, METADATA_FILE)
         if not os.path.isfile(metadata):
             continue
 
-        with open(metadata, 'r') as myfile:
-            metadict = json.loads(myfile.read())
+        metadict = read_metadata(metadata)
 
         jobid = metadict.get("jobid")
         if not jobid:
             continue
 
-        slurm_files = sorted(
-            glob.glob(os.path.join(slurm_dir, f"slurm-{jobid}.out")) +
-            glob.glob(os.path.join(slurm_dir, f"slurm-{jobid}_*.out"))
-        )
+        slurm_files = slurm_output_files(slurm_dir, jobid)
 
         if not slurm_files:
             continue
@@ -213,8 +192,7 @@ def update_slurm_output(subfolders: List[str], slurm_dir: str):
         metadict["SlurmOutput"] = new_slurm_output
         update_dir.append(folder)
 
-        output_file = os.path.join(folder, "metadata.json")
-        json.dump(metadict, open(output_file, 'w'), sort_keys=False, indent='\t', separators=(',', ': '))
+        write_metadata(metadict, metadata)
 
     update_dir = list(set(update_dir))
     update_dir.sort()
@@ -224,6 +202,23 @@ def update_slurm_output(subfolders: List[str], slurm_dir: str):
 
     if len(update_dir) == 0:
         print("No matching slurm output files found.")
+
+
+def parse_percent(value: str) -> Optional[float]:
+    """Convert a percentage of the efficiency report into a number.
+
+    Args:
+        value: Value of the efficiency report, for example '85.3%'.
+
+    Returns:
+        float: The value without the percent sign, or None if the report has no value.
+    """
+    if value and value not in ('---', 'N/A', ''):
+        try:
+            return float(value.rstrip('%'))
+        except ValueError:
+            return None
+    return None
 
 
 def average_efficiency(subfolders: List[str], slurm_dir: Optional[str] = None):
@@ -243,28 +238,15 @@ def average_efficiency(subfolders: List[str], slurm_dir: Optional[str] = None):
     time_effs = []
     core_hours_list = []
 
-    def parse_percent(value: str) -> Optional[float]:
-        if value and value not in ('---', 'N/A', ''):
-            try:
-                return float(value.rstrip('%'))
-            except ValueError:
-                return None
-        return None
-
     for folder in subfolders:
-        metadata = os.path.join(folder, "metadata.json")
+        metadata = os.path.join(folder, METADATA_FILE)
         if not os.path.isfile(metadata):
             continue
 
-        with open(metadata, 'r') as myfile:
-            metadict = json.loads(myfile.read())
+        metadict = read_metadata(metadata)
 
-        reports = metadict.get("Reportseff", [])
-        if not isinstance(reports, list):
-            reports = [reports]
-
-        for report in reports:
-            if report.get("State") in ("RUNNING", "PENDING"):
+        for report in as_list(metadict.get("Reportseff", [])):
+            if report.get("State") in UNFINISHED_STATES:
                 continue
             cpu = parse_percent(report.get("CPUEff"))
             mem = parse_percent(report.get("MemEff"))
@@ -276,9 +258,7 @@ def average_efficiency(subfolders: List[str], slurm_dir: Optional[str] = None):
             if time_eff is not None:
                 time_effs.append(time_eff)
 
-        slurm_outputs = metadict.get("SlurmOutput", [])
-        if not isinstance(slurm_outputs, list):
-            slurm_outputs = [slurm_outputs]
+        slurm_outputs = as_list(metadict.get("SlurmOutput", []))
 
         if slurm_outputs:
             job_core_hours = [so["core_hours"] for so in slurm_outputs if so.get("core_hours") is not None]
@@ -287,36 +267,32 @@ def average_efficiency(subfolders: List[str], slurm_dir: Optional[str] = None):
         elif slurm_dir:
             jobid = metadict.get("jobid")
             if jobid:
-                slurm_files = sorted(
-                    glob.glob(os.path.join(slurm_dir, f"slurm-{jobid}.out")) +
-                    glob.glob(os.path.join(slurm_dir, f"slurm-{jobid}_*.out"))
-                )
-                job_core_hours = [
-                    slurm_output_to_dict(sf).get("core_hours") for sf in slurm_files
-                    if slurm_output_to_dict(sf).get("core_hours") is not None
-                ]
+                job_core_hours = [core_hours for core_hours in
+                                  (slurm_output_to_dict(sf).get("core_hours")
+                                   for sf in slurm_output_files(slurm_dir, jobid))
+                                  if core_hours is not None]
                 if job_core_hours:
                     core_hours_list.append(sum(job_core_hours))
 
     print(f"Efficiency summary for {len(subfolders)} job(s):")
 
     if cpu_effs:
-        print(f"  Average CPU Efficiency:    {sum(cpu_effs) / len(cpu_effs):.1f}% (n={len(cpu_effs)})")
+        print(f"  Average CPU Efficiency:    {statistics.mean(cpu_effs):.1f}% (n={len(cpu_effs)})")
     else:
         print("  Average CPU Efficiency:    N/A")
 
     if mem_effs:
-        print(f"  Average Memory Efficiency: {sum(mem_effs) / len(mem_effs):.1f}% (n={len(mem_effs)})")
+        print(f"  Average Memory Efficiency: {statistics.mean(mem_effs):.1f}% (n={len(mem_effs)})")
     else:
         print("  Average Memory Efficiency: N/A")
 
     if time_effs:
-        print(f"  Average Time Efficiency:   {sum(time_effs) / len(time_effs):.1f}% (n={len(time_effs)})")
+        print(f"  Average Time Efficiency:   {statistics.mean(time_effs):.1f}% (n={len(time_effs)})")
     else:
         print("  Average Time Efficiency:   N/A")
 
     if core_hours_list:
-        print(f"  Average Core Hours: {sum(core_hours_list) / len(core_hours_list):.2f} (n={len(core_hours_list)})")
+        print(f"  Average Core Hours: {statistics.mean(core_hours_list):.2f} (n={len(core_hours_list)})")
         print(f"  Median Core Hours: {statistics.median(core_hours_list):.2f} (n={len(core_hours_list)})")
         print(f"  Total Core Hours:   {sum(core_hours_list):.2f}")
     else:
@@ -341,9 +317,9 @@ def main(
         slurm_dir: Optional directory containing slurm output files to parse and store.
         average: Print average efficiency and core-hour summary across matching jobs.
     """
-    subfolders = [f.path for f in os.scandir(input_dir) if f.is_dir()]
-
-    if pattern is not None:
+    if pattern is None:
+        subfolders = [f.path for f in os.scandir(input_dir) if f.is_dir()]
+    else:
         subfolders = sorted(glob.glob(os.path.join(input_dir, f"*{pattern}*"), recursive=False))
         if len(subfolders) == 0:
             raise ValueError(f"No subfolders match pattern {pattern}.")
@@ -381,4 +357,7 @@ if __name__ == "__main__":
                         help="Print average efficiency and core-hour summary across matching jobs.")
     args = parser.parse_args()
 
-    main(args.input_dir, args.pattern, args.general, args.sbatch, args.slurm_dir, args.average)
+    try:
+        main(args.input_dir, args.pattern, args.general, args.sbatch, args.slurm_dir, args.average)
+    except (FileNotFoundError, ValueError) as exc:
+        sys.exit(str(exc))

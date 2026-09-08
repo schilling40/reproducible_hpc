@@ -8,17 +8,23 @@ Feedback is appreciated.
 
 ## Setup
 
-The paths and names which are specific to a cluster account are collected in `scripts/settings.json`.
+The paths and names which are specific to a cluster account are collected in `utils/settings.json`.
 This file is not tracked by git, so that no absolute path enters the repository.
 Copy the example file once and adapt the values to your account:
 
 ```
-cp scripts/settings.example.json scripts/settings.json
+cp utils/settings.example.json utils/settings.json
 ```
 
 The file contains the mail address and the Slurm account for the sbatch header, the directories of the data and of the job archive, the names of the micromamba environments, the local paths of the git repositories, and the paths of the trained models.
 `scripts/deploy_process.py` reads the file and fills the values into the templates.
 Use the option `-s` to select a different settings file.
+
+## Repository structure
+
+The directory `scripts` contains the entry points which are run from the command line.
+The directory `utils` contains the utility functions which the scripts share, together with the
+settings file.
 
 ## Current concept
 
@@ -37,8 +43,12 @@ Multiple templates for common sbatch scripts are located in `templates`.
 This includes the application of trained neural networks for the segmentation of IHCs and SGNs, the detection of synapses, and the transformation of data into MoBIE format and its transfer to the S3 bucket.
 Using `scripts/deploy_process.py` a JSON dictionary with parameters can be given as an input to fill blanks in the templates and use the resulting scripts for job submission.
 The templates contain no absolute path.
-A blank which is specific to a cluster account is filled from `scripts/settings.json`, a blank which is specific to a job is filled from the parameter dictionary.
+A blank which is specific to a cluster account is filled from `utils/settings.json`, a blank which is specific to a job is filled from the parameter dictionary.
 A blank without a value raises an error, so that no incomplete sbatch script is written.
+
+The input data of the job is checked before the job is deployed.
+A missing input gives a warning, and the option `--deploy` stops before the submission.
+Use the option `--force` to submit the job for data which does not exist yet.
 
 ## Example
 
