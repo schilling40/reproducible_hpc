@@ -9,6 +9,7 @@
     "data_dir": "/path/to/cochlea-lightsheet",
     "mobie_project": "/path/to/cochlea-lightsheet/mobie_project/cochlea-lightsheet",
     "s3_remote": "cochlea-lightsheet:cochlea-lightsheet",
+    "service_endpoint": "https://s3.fs.gwdg.de",
 
     "repositories": {
         "flamingo_tools": "/path/to/flamingo-tools",

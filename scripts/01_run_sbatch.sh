@@ -12,17 +12,23 @@ helpstr=$(cat <<- EOF
 Submit a batch job and create a log file containing the job id.
 The sbatch script should follow the format YYYY-MM-DD_sbatch_<suffix>.sbatch.
 
+-m move	Move the job files into the archive instead of copying them
 -a archive	Directory for archiving sbatch script and log file
+-r repos	File listing the git repositories to snapshot
+-d jobid	Start the job only after this JobID completed successfully
 -h help
+
+The JobID of the submitted job is printed as 'SUBMITTED_JOBID=<jobid>'.
 EOF
 )
 
 REPO_OPTION=()
 MOVE_OPTION=()
+SBATCH_OPTS=()
 
-usage="Usage: $0 [-h] [-m move] [-a archive_dir] [-r repository_file] <sbatch_file>"
+usage="Usage: $0 [-h] [-m move] [-a archive_dir] [-r repository_file] [-d jobid] <sbatch_file>"
 
-while getopts "ma:r:h" opt; do
+while getopts "ma:r:d:h" opt; do
 	case $opt in
 	m)
 		MOVE_OPTION+=(-m)
@@ -33,6 +39,10 @@ while getopts "ma:r:h" opt; do
 	r)
 		REPOSITORY_FILE=$(readlink -f "$OPTARG")
 		REPO_OPTION+=(-r "$REPOSITORY_FILE")
+	;;
+	d)
+		# Only run after the dependency succeeded, and give up instead of waiting forever.
+		SBATCH_OPTS+=(--dependency=afterok:"$OPTARG" --kill-on-invalid-dep=yes)
 	;;
 	h)
 		echo "$usage"
@@ -73,12 +83,20 @@ LOG_FILE="$DATE"_log_"$SUFFIX_STR".txt
 LOG_FILE="$INPUT_DIR"/"$LOG_FILE"
 
 # --- Submit job ---
-JOB_STRING=$(sbatch "$INPUT")
-echo "$JOB_STRING"
+# '--parsable' prints the bare JobID, optionally followed by ';<cluster>'.
+if ! JOB_STRING=$(sbatch --parsable "${SBATCH_OPTS[@]}" "$INPUT") ; then
+	echo "Submission of $INPUT failed." >&2
+	exit 1
+fi
 
-# --- Extract JobID from output ---
-IFS=' ' read -r -a JOB_ARR <<< "$JOB_STRING"
-JOB_ID=${JOB_ARR[-1]}
+JOB_ID=${JOB_STRING%%;*}
+
+if [ -z "$JOB_ID" ] ; then
+	echo "No JobID was returned for $INPUT." >&2
+	exit 1
+fi
+
+echo "SUBMITTED_JOBID=$JOB_ID"
 
 if ! [ -f "$LOG_FILE" ] ; then
 	printf '%s\n' "$JOB_ID" > "$LOG_FILE"
@@ -86,8 +104,6 @@ else
 	# append to log file
 	sed -i '$a'"$JOB_ID"'' "$LOG_FILE"
 fi
-
-echo "bash script" "$ARCHIVE_DIR"
 
 if [ "$ARCHIVE_DIR" ] ; then
 	echo "writing metadata"

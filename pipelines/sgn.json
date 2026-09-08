@@ -1,0 +1,8 @@
+{
+    "description": "Compute the normalization, apply the SGN model and segment the prediction.",
+    "steps": [
+        "mean_std_SGN",
+        "apply_SGN",
+        "segment_SGN"
+    ]
+}

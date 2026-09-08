@@ -11,6 +11,7 @@
 #SBATCH --constraint=inet
 
 source ~/.bashrc
+micromamba activate <mobie_environment>
 
 # Run the script
 
@@ -19,8 +20,26 @@ SCRIPT_DIR=$SCRIPT_REPO/mobie
 
 MOBIE_PROJECT=<mobie_project>
 
+INPUT=<mobie_project>/<cochlea>/dataset.json
+
+# The settings hold the rclone remote in the form remote:bucket. Only the bucket name is needed here.
+S3_REMOTE=<s3_remote>
+BUCKET_NAME="${S3_REMOTE#*:}"
+
 echo "Transfer of <cochlea> from ""$MOBIE_PROJECT"" to S3"
 
+for path in "$INPUT" ; do
+	if [ ! -e "$path" ] ; then
+		echo "Missing input of the job: $path"
+		exit 1
+	fi
+done
+
+# replace maximal intensity reference 65535 with the more reasonable value 1400
+sed -i 's/65535/1400/g' "$INPUT"
+
+mobie.add_remote_metadata -s <service_endpoint> -b "$BUCKET_NAME" -i "$MOBIE_PROJECT"
+
 module load rclone
-rclone --progress copyto "$MOBIE_PROJECT"/<cochlea>/dataset.json <s3_remote>/<cochlea>/dataset.json
+rclone --progress copyto "$INPUT" <s3_remote>/<cochlea>/dataset.json
 rclone --progress copyto "$MOBIE_PROJECT"/<cochlea>/images/ome-zarr <s3_remote>/<cochlea>/images/ome-zarr

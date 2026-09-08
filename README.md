@@ -25,6 +25,8 @@ Use the option `-s` to select a different settings file.
 The directory `scripts` contains the entry points which are run from the command line.
 The directory `utils` contains the utility functions which the scripts share, together with the
 settings file.
+The directory `templates` contains one template per processing step, and the directory `pipelines`
+contains the definitions which chain those steps.
 
 ## Current concept
 
@@ -49,6 +51,27 @@ A blank without a value raises an error, so that no incomplete sbatch script is 
 The input data of the job is checked before the job is deployed.
 A missing input gives a warning, and the option `--deploy` stops before the submission.
 Use the option `--force` to submit the job for data which does not exist yet.
+
+## Pipelines
+
+Several processing steps can be submitted as a chain of Slurm jobs:
+
+```
+python scripts/deploy_process.py -p mobie -j <params.json> --deploy   # add to MoBIE, transfer to S3
+python scripts/deploy_process.py -p sgn -j <params.json> --deploy     # mean_std, apply, segment SGN
+python scripts/deploy_process.py -p ihc -j <params.json> --deploy     # mean_std, apply, segment IHC
+```
+
+The whole chain is submitted at once.
+Each step is a separate job with its own resources, so the steps can differ in partition, cores,
+memory and GPU.
+A step starts only after its predecessor completed successfully, because it is submitted with
+`--dependency=afterok`.
+Each step also verifies its own input when it runs.
+A missing input makes the job fail, so the remaining steps of the chain are cancelled.
+
+A pipeline is defined by a JSON file in `pipelines`, which lists the templates in order.
+Use the option `--start-at` to resume a chain after a failed step.
 
 ## Example
 

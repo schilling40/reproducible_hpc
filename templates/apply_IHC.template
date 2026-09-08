@@ -5,6 +5,7 @@
 #SBATCH --mail-type=FAIL        # send mail when job begins and ends
 
 #SBATCH -p grete:shared         # the partition
+#SBATCH -A <account_name>
 #SBATCH -G A100:1               # For requesting 1 A100 GPU.
 #SBATCH -c 1
 #SBATCH --mem 64G
@@ -35,6 +36,14 @@ export INPUT_KEY=<input_key>
 echo "Input directory: ${INPUT}"
 echo "Output directory: ${OUTPUT_FOLDER}"
 echo "Model: ${MODEL}"
+
+# Verify the input of the job. A missing input stops the rest of the pipeline.
+for path in "$INPUT" "$OUTPUT_FOLDER"/mean_std.json "$OUTPUT_FOLDER"/mask.zarr ; do
+	if [ ! -e "$path" ] ; then
+		echo "Missing input of the job: $path"
+		exit 1
+	fi
+done
 
 cmd_array=(	'import sys,os;'
 	'sys.path.insert(0,os.environ["SCRIPT_DIR"]);'

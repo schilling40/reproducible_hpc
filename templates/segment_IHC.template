@@ -37,6 +37,14 @@ echo "CENTER_DISTANCE_THRESHOLD: ${CENTER_DISTANCE_THRESHOLD}"
 echo "BOUNDARY_DISTANCE_THRESHOLD: ${BOUNDARY_DISTANCE_THRESHOLD}"
 echo "DISTANCE_SMOOTHING: ${DISTANCE_SMOOTHING}"
 
+# Verify the input of the job. A missing input stops the rest of the pipeline.
+for path in "$OUTPUT_FOLDER"/predictions.zarr ; do
+	if [ ! -e "$path" ] ; then
+		echo "Missing input of the job: $path"
+		exit 1
+	fi
+done
+
 cmd_array=(	'import sys,os;'
 	'sys.path.insert(0,os.environ["SCRIPT_DIR"]);'
 	'import unet_prediction;'

@@ -38,6 +38,14 @@ export MODEL=<model>
 echo "OUTPUT_FOLDER $OUTPUT_FOLDER"
 echo "MODEL $MODEL"
 
+# Verify the input of the job. A missing input stops the rest of the pipeline.
+for path in "$INPUT" ; do
+	if [ ! -e "$path" ] ; then
+		echo "Missing input of the job: $path"
+		exit 1
+	fi
+done
+
 if [ ! -d "$OUTPUT_FOLDER" ] ; then
 	mkdir -p "$OUTPUT_FOLDER"
 fi
