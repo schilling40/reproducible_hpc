@@ -229,7 +229,8 @@ def submit_step(
     cmd += ["-r", repository_file, output_file]
 
     print(" ".join(cmd))
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    # 'capture_output' and 'text' need Python 3.7. The login node of the cluster has Python 3.6.
+    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
     if result.stdout:
         print(result.stdout, end="")
