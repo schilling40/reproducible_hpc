@@ -52,6 +52,17 @@ The input data of the job is checked before the job is deployed.
 A missing input gives a warning, and the option `--deploy` stops before the submission.
 Use the option `--force` to submit the job for data which does not exist yet.
 
+The deploy step also decides which file the job reads.
+The initial processing writes one n5 which holds every stain, and that n5 is deleted once the cochlea is processed.
+A later job reads the OME-Zarr which was transferred back from the S3 bucket instead.
+The n5 wins if it still exists, and the OME-Zarr `<data_dir>/<cochlea>/<stain>.ome.zarr` is the fallback.
+The input key follows the file, so a rerun from the S3 bucket needs no extra parameter.
+
+The stain of a job is a parameter.
+Use `stain_SGN`, `stain_IHC` or `stain_synapses` to process a target with a different stain, for example `Homer1` instead of `CTBP2` for synapses.
+The prediction folder carries the stain if it deviates from the default, so a new stain never overwrites an older prediction.
+The stain does not change the model, which is selected by the model version alone.
+
 ## Pipelines
 
 Several processing steps can be submitted as a chain of Slurm jobs:

@@ -25,7 +25,7 @@ SCRIPT_REPO=<flamingo_tools>
 cd "$SCRIPT_REPO"/flamingo_tools/segmentation/ || exit
 
 export SCRIPT_DIR=$SCRIPT_REPO/scripts
-export OUTPUT_FOLDER=<data_dir>/predictions/<cochlea>/<sgn_version>
+export OUTPUT_FOLDER=<data_dir>/predictions/<cochlea>/<prediction_dir>
 export MIN_SIZE=1000
 export BOUNDARY_DISTANCE_THRESHOLD=0.5
 

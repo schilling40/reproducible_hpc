@@ -15,7 +15,7 @@ from datetime import date
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
-from utils.inputs import SEGMENTATION_INPUT, check_job_input, job_variables, path_exists  # noqa: E402
+from utils.inputs import SEGMENTATION_INPUT, check_job_input, job_variables, path_exists, resolve_input  # noqa: E402
 from utils.metadata import METADATA_FILE, read_metadata, write_metadata  # noqa: E402
 from utils.pipelines import load_pipeline, pipeline_names, step_template, steps_from  # noqa: E402
 from utils.repositories import write_repository_file  # noqa: E402
@@ -40,6 +40,17 @@ WATERSHED_DEFAULTS = {
             "boundary_distance_threshold": "0.6",
             "distance_smoothing": "0.6"},
 }
+
+# One entry per group of jobs. 'stain' is the default of the 'stain_<group>' parameter, 'version'
+# names the parameter which selects the model, and 'models' is the group of the settings file.
+GROUPS = {
+    "SGN": {"stain": "PV", "version": "sgn_version", "models": "SGN", "masking": "sgn"},
+    "IHC": {"stain": "Vglut3", "version": "ihc_version", "models": "IHC", "masking": "ihc"},
+    "synapses": {"stain": "CTBP2", "version": "synapse_version", "models": "Synapses", "masking": None},
+}
+
+# Model version which is used if 'synapse_version' is not a parameter of the job.
+DEFAULT_SYNAPSE_VERSION = "synapses_v3"
 
 
 def watershed_parameters(
@@ -69,6 +80,77 @@ def watershed_parameters(
             ("center_distance_threshold", "boundary_distance_threshold", "distance_smoothing")}
 
 
+def template_group(
+    input_file: str,
+) -> str:
+    """Return the group of a template.
+
+    Args:
+        input_file: Path of the template.
+
+    Returns:
+        str: Key of `GROUPS`, or None for a template which reads every stain, such as a MoBIE step.
+    """
+    template_name = os.path.basename(input_file)
+
+    if "SGN" in template_name:
+        return "SGN"
+    if "IHC" in template_name:
+        return "IHC"
+    if "synapse" in template_name:
+        return "synapses"
+
+    return None
+
+
+def n5_name(
+    prefix: str,
+    number: str,
+    side: str,
+    stains: list,
+    version: str,
+) -> str:
+    """Return the file name of the n5 written by the initial processing.
+
+    Args:
+        prefix: Animal and person of the cochlea name.
+        number: Number of the cochlea, with leading zeros.
+        side: Side of the cochlea.
+        stains: Every stain of the n5, in the order of its setups.
+        version: Version suffix of the cochlea, or an empty string.
+
+    Returns:
+        str: File name of the n5.
+    """
+    stains_str = "_".join(stains)
+
+    return f"{prefix}_{number.lstrip('0')}{side}_{stains_str}_fused{version}.n5"
+
+
+def prediction_name(
+    group: str,
+    stain: str,
+    version: str,
+) -> str:
+    """Return the name of the prediction folder of one group.
+
+    The stain is part of the name if it deviates from the default of the group. A prediction of a
+    different stain must not overwrite the prediction of the default stain.
+
+    Args:
+        group: Key of `GROUPS`.
+        stain: Stain of the job.
+        version: Model version of the job.
+
+    Returns:
+        str: Name of the prediction folder.
+    """
+    if stain == GROUPS[group]["stain"]:
+        return version
+
+    return f"{stain}_{version}"
+
+
 def build_replacements(
     settings: dict,
     parameters: dict,
@@ -90,6 +172,11 @@ def build_replacements(
     replacement_dict = settings_to_replacements(settings)
     replacement_dict.update(parameters)
 
+    # The stain of every group is known to a template of any group, because a job can read the
+    # result of another group. The mask of 'synapse_marker' is the IHC segmentation.
+    for group_name, group_spec in GROUPS.items():
+        replacement_dict.setdefault(f"stain_{group_name}", group_spec["stain"])
+
     cochlea = replacement_dict["cochlea"]
     replacement_dict["cochlea_job_name"] = "-".join(cochlea.split("_"))
 
@@ -107,42 +194,64 @@ def build_replacements(
     person = cochlea_content[1]
     number = cochlea_content[2]
     side = cochlea_content[3]
-    stains = replacement_dict["stains"]
-    stains_str = "_".join(stains)
+    stains = replacement_dict.get("stains")
 
     prefix = "".join([animal, person])
-    replacement_dict["cochlea_data"] = f"{prefix}_{number.lstrip('0')}{side}_{stains_str}_fused{version}.n5"
+    template_name = os.path.basename(input_file)
+    group = template_group(input_file)
 
-    group = ""
-    if "SGN" in input_file:
-        group = "SGN"
-        stain_position = stains.index("PV")
-        replacement_dict["input_key"] = f"setup{stain_position}/timepoint0/s0"
-        replacement_dict["masking"] = "sgn"
-        replacement_dict["model"] = get_model_path(settings, "SGN", replacement_dict["sgn_version"])
-
-    elif "IHC" in input_file:
-        group = "IHC"
-        stain_position = stains.index("Vglut3")
-        replacement_dict["input_key"] = f"setup{stain_position}/timepoint0/s0"
-        replacement_dict["masking"] = "ihc"
-        replacement_dict["model"] = get_model_path(settings, "IHC", replacement_dict["ihc_version"])
-
-    elif "synapse" in input_file:
-        stain_position = stains.index("CTBP2")
-        replacement_dict["input_key"] = f"setup{stain_position}/timepoint0/s0"
-        if "synapse_version" not in parameters:
-            replacement_dict["synapse_version"] = "synapses_v3"
-        replacement_dict["model"] = get_model_path(settings, "Synapses", replacement_dict["synapse_version"])
+    if group is None:
+        # The MoBIE templates read every stain, so they always need the n5.
+        if not stains:
+            raise ValueError(f"The template {template_name} needs the 'stains' parameter, which lists every "
+                             "stain of the n5 data.")
+        replacement_dict["cochlea_data"] = n5_name(prefix, number, side, stains, version)
+        replacement_dict["channel_multi"] = "_".join(stains)
+        replacement_dict["input_key_multi"] = "_".join(
+            [f"setup{index}/timepoint0/s0" for index in range(len(stains))])
 
     else:
-        replacement_dict["input_key_multi"] = "_".join([f"setup{i}/timepoint0/s0" for i in range(len(stains))])
+        group_spec = GROUPS[group]
+        stain = replacement_dict[f"stain_{group}"]
 
-    if "segment" in input_file:
+        # The n5 holds every stain, so its key selects the channel. A stain which the n5 does not
+        # hold leaves the OME-Zarr of the S3 bucket as the only candidate.
+        if stains and stain in stains:
+            n5_candidate = n5_name(prefix, number, side, stains, version)
+            n5_key = f"setup{stains.index(stain)}/timepoint0/s0"
+        else:
+            n5_candidate = None
+            n5_key = None
+
+        cochlea_dir = os.path.join(replacement_dict["data_dir"], cochlea)
+        replacement_dict["cochlea_data"], replacement_dict["input_key"] = resolve_input(
+            cochlea_dir, n5_candidate, n5_key, stain)
+
+        if group_spec["masking"] is not None:
+            replacement_dict["masking"] = group_spec["masking"]
+
+        if group == "synapses":
+            replacement_dict.setdefault(group_spec["version"], DEFAULT_SYNAPSE_VERSION)
+
+        if group_spec["version"] not in replacement_dict:
+            raise ValueError(f"The template {template_name} needs the '{group_spec['version']}' parameter.")
+
+        replacement_dict["model"] = get_model_path(settings, group_spec["models"],
+                                                   replacement_dict[group_spec["version"]])
+
+    # The prediction folder of every group whose model version is known, so that a template can
+    # name the result of another group.
+    for group_name, group_spec in GROUPS.items():
+        model_version = replacement_dict.get(group_spec["version"])
+        if model_version is not None:
+            replacement_dict[f"{group_name.lower()}_prediction"] = prediction_name(
+                group_name, replacement_dict[f"stain_{group_name}"], model_version)
+
+    if group is not None:
+        replacement_dict["prediction_dir"] = replacement_dict[f"{group.lower()}_prediction"]
+
+    if "segment" in template_name:
         replacement_dict.update(watershed_parameters(replacement_dict["model"], group))
-
-    # values for MoBIE transfer
-    replacement_dict["channel_multi"] = stains_str
 
     return replacement_dict, f"{prefix}{number.lstrip('0')}{side}"
 

@@ -28,9 +28,9 @@ cd "$SCRIPT_REPO"/flamingo_tools/segmentation/ || exit
 
 export SCRIPT_DIR=$SCRIPT_REPO/scripts
 
-export INPUT=<cochlea>/images/ome-zarr/CTBP2.ome.zarr
-export MASK_PATH=<cochlea>/images/ome-zarr/<ihc_version>.ome.zarr
-export OUTPUT_FOLDER=<data_dir>/predictions/<cochlea>/<synapse_version>
+export INPUT=<cochlea>/images/ome-zarr/<stain_synapses>.ome.zarr
+export MASK_PATH=<cochlea>/images/ome-zarr/<ihc_prediction>.ome.zarr
+export OUTPUT_FOLDER=<data_dir>/predictions/<cochlea>/<prediction_dir>
 
 export INPUT_KEY="s0"
 export MODEL=<model>

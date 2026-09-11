@@ -11,6 +11,10 @@ import re
 # Written by the apply step. It is the input of the segmentation step.
 SEGMENTATION_INPUT = "predictions.zarr"
 
+# Scale level of an OME-Zarr transferred from the S3 bucket. An n5 of the initial processing uses
+# 'setup<n>/timepoint0/s0' instead, because it holds every stain in one file.
+OME_ZARR_KEY = "s0"
+
 # Matches 'INPUT=<path>' and 'export OUTPUT_FOLDER=<path>' in a rendered sbatch script.
 ASSIGNMENT_PATTERN = re.compile(r"^\s*(?:export\s+)?(INPUT|OUTPUT_FOLDER)=(\S+)")
 
@@ -55,6 +59,41 @@ def path_exists(
     if any(character in path for character in WILDCARD_CHARACTERS):
         return len(glob.glob(path)) > 0
     return os.path.exists(path)
+
+
+def resolve_input(
+    cochlea_dir: str,
+    n5_name: str,
+    n5_key: str,
+    stain: str,
+) -> tuple:
+    """Return the file name of the job input and the matching input key.
+
+    The n5 of the initial processing wins. The OME-Zarr transferred from the S3 bucket is the
+    fallback, because the n5 is deleted after a cochlea is processed. If neither exists, the n5 is
+    reported, so that `check_job_input()` names the familiar path.
+
+    Args:
+        cochlea_dir: Directory of the cochlea.
+        n5_name: File name of the n5, or None if the stain list is unknown.
+        n5_key: Input key of the n5.
+        stain: Stain of the job. It names the OME-Zarr file.
+
+    Returns:
+        tuple of str: the file name of the input, and its input key.
+    """
+    ome_zarr_name = f"{stain}.ome.zarr"
+
+    if n5_name is None:
+        return ome_zarr_name, OME_ZARR_KEY
+
+    if path_exists(os.path.join(cochlea_dir, n5_name)):
+        return n5_name, n5_key
+
+    if path_exists(os.path.join(cochlea_dir, ome_zarr_name)):
+        return ome_zarr_name, OME_ZARR_KEY
+
+    return n5_name, n5_key
 
 
 def check_job_input(
